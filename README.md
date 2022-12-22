@@ -1,1 +1,1 @@
-# calculate_embeddings
+![](facebook_convnext-tiny-224_query.jpg)
