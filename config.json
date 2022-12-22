@@ -16,5 +16,7 @@
     "target": ["images_project", "images_dataset"],
     "context_root": "Report"
   },
-  "min_instance_version": "6.5.22"
+  "min_instance_version": "6.5.22",
+  "release": { "version":"v1.0.0", "name":"init" },
+  "slug": "max-unfinity/calculate_embeddings"
 }
