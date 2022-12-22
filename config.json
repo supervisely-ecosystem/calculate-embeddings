@@ -13,5 +13,5 @@
   "context_menu": {
     "target": ["images_project", "images_dataset"],
     "context_root": "Report"
-  },
+  }
 }
