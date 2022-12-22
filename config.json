@@ -1,22 +1,17 @@
 {
   "type": "app",
-  "version": "2.0.0",
   "name": "Calculate Embeddings",
   "description": "Calculate Embeddings",
-  "headless": true,
   "categories": [
     "images",
-	  "development"
+    "development"
   ],
   "icon": "https://user-images.githubusercontent.com/12828725/183916661-224ff8cb-a3d1-4b82-a629-def8c6de1db5.png",
   "poster": "https://user-images.githubusercontent.com/106374579/187223426-ec7e0fae-8ba9-48fd-b71f-8680cc0f1b49.png",
-  "entrypoint": "python src/main.py",
-  "port": 8000,
+  "instance_version": "6.68.45",
+  "main_script": "src/main.py",
   "context_menu": {
     "target": ["images_project", "images_dataset"],
     "context_root": "Report"
   },
-  "min_instance_version": "6.5.22",
-  "release": { "version":"v1.0.0", "name":"init" },
-  "slug": "max-unfinity/calculate_embeddings"
 }
