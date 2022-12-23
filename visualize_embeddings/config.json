@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "name": "Visualize Embeddings",
   "description": "Visualize Embeddings",
-  "entrypoint": "python -m uvicorn src.main:app --host 0.0.0.0 --port 8000",
+  "entrypoint": "python -m uvicorn visualize_embeddings.src.main:app --host 0.0.0.0 --port 8000",
   "port": 8000,
   "icon": "https://user-images.githubusercontent.com/12828725/183916661-224ff8cb-a3d1-4b82-a629-def8c6de1db5.png",
   "poster": "https://colah.github.io/posts/2014-07-NLP-RNNs-Representations/img/Socher-ImageClassManifold.png",
@@ -19,6 +19,6 @@
     "context_category": "Metric Learning"
   },
   "min_instance_version": "6.5.22",
-  "release": { "version":"v1.0.1", "name":"init" },
+  "release": { "version":"v1.0.2", "name":"init" },
   "slug": "poldersen2/visualize-embeddings"
 }
