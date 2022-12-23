@@ -6,7 +6,7 @@
   "headless": true,
   "entrypoint": "python src/main.py",
   "icon": "https://user-images.githubusercontent.com/12828725/183916661-224ff8cb-a3d1-4b82-a629-def8c6de1db5.png",
-  "poster": "https://raw.githubusercontent.com/supervisely-ecosystem/calculate-embeddings/master/facebook_convnext-tiny-224_query.jpg",
+  "poster": "https://colah.github.io/posts/2014-07-NLP-RNNs-Representations/img/Socher-ImageClassManifold.png",
   "categories": [
     "neural network",
     "images",
@@ -17,13 +17,7 @@
     "target": ["images_project", "images_dataset"],
     "context_category": "Metric Learning"
   },
-  "modal_template_data": {
-    "test_1": "modalDataVal 1"
-  },
-  "modal_template_state": {
-    "checkbox_1": false
-  },
   "min_instance_version": "6.5.22",
-  "release": { "version":"v1.0.2", "name":"test" },
+  "release": { "version":"v1.0.3", "name":"release" },
   "slug": "poldersen2/calculate-embeddings"
 }
