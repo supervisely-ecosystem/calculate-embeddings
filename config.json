@@ -18,11 +18,11 @@
     "context_category": "Metric Learning"
   },
   "modal_template_data": {
-    "test_1": "modalDataVal 1",
-  }
+    "test_1": "modalDataVal 1"
+  },
   "modal_template_state": {
-    "checkbox_1": false,
-  }
+    "checkbox_1": false
+  },
   "min_instance_version": "6.5.22",
   "release": { "version":"v1.0.2", "name":"test" },
   "slug": "poldersen2/calculate-embeddings"
