@@ -1,0 +1,7 @@
+supervisely==6.68.45
+opencv-python==4.6.0.66
+transformers
+timm
+torch
+scikit-learn
+umap-learn
