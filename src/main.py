@@ -74,6 +74,8 @@ def normalize(img_batch, mean, std, np_dtype=np.float32):
 
 if __name__ == '__main__':
     
+    print('v1.0.1')
+    
     model_name = 'facebook/convnext-tiny-224'
     instance_mode = 'both'
     batch_size = 2
@@ -83,7 +85,6 @@ if __name__ == '__main__':
     np_dtype = np.float32
     
     save_name = model_name.replace('/','_')
-    print('v1.0.1')
 
     load_dotenv("local.env")
     load_dotenv(os.path.expanduser("~/supervisely.env"))
