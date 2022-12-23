@@ -1,0 +1,24 @@
+{
+  "type": "app",
+  "version": "2.0.0",
+  "name": "Visualize Embeddings",
+  "description": "Visualize Embeddings",
+  "entrypoint": "python -m uvicorn src.main:app --host 0.0.0.0 --port 8000",
+  "port": 8000,
+  "icon": "https://user-images.githubusercontent.com/12828725/183916661-224ff8cb-a3d1-4b82-a629-def8c6de1db5.png",
+  "poster": "https://raw.githubusercontent.com/supervisely-ecosystem/calculate-embeddings/master/facebook_convnext-tiny-224_query.jpg",
+  "categories": [
+    "images",
+    "metric learning",
+    "visualization",
+    "exploration",
+    "visualization stats"
+  ],
+  "context_menu": {
+    "target": ["images_project", "images_dataset"],
+    "context_category": ["Metric Learning", "Report"]
+  },
+  "min_instance_version": "6.5.22",
+  "release": { "version":"v1.0.0", "name":"init" },
+  "slug": "poldersen2/visualize-embeddings"
+}

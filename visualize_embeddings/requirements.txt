@@ -1,0 +1,6 @@
+supervisely==6.68.45
+# transformers
+# timm
+torch
+scikit-learn
+umap-learn

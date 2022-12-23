@@ -43,6 +43,8 @@ def extract_crops(img_np, labels, input_size_hw, instance_mode='image', hw_expan
         for label in labels:
             if not isinstance(label.geometry, accepted_geometry):
                 continue
+            if label.geometry.area < 9:
+                continue
             rect = label.geometry.to_bbox()
             yxyx_croods.append([rect.top, rect.left, rect.bottom, rect.right])
             result_obj_cls.append(label.obj_class.name)
@@ -73,8 +75,6 @@ def normalize(img_batch, mean, std, np_dtype=np.float32):
 
 
 if __name__ == '__main__':
-    
-    print('v1.0.1')
     
     model_name = 'facebook/convnext-tiny-224'
     instance_mode = 'both'
@@ -121,6 +121,7 @@ if __name__ == '__main__':
         'cfg': f"{path_prefix}/{save_name}_cfg.json",
         'embeddings': f"{path_prefix}/{save_name}_embeddings.pt"
     }
+
     os.makedirs(path_prefix, exist_ok=True)
     if api.file.exists(team_id, '/'+save_paths['info']):
         api.file.download(team_id, '/'+save_paths['info'], save_paths['info'])
@@ -193,6 +194,7 @@ if __name__ == '__main__':
                 to_infer_img_ids.append(img_id)
 
         # Infer and collect info
+        progress = sly.Progress(f'Infer dataset {dataset.name}', len(to_infer_img_ids))
         for image_ids in sly.batched(to_infer_img_ids, batch_size=batch_size_api):
             images = api.image.download_nps(dataset.id, image_ids)
             anns_json = api.annotation.download_json_batch(dataset.id, image_ids)
@@ -213,12 +215,16 @@ if __name__ == '__main__':
                     object_id = label.geometry.sly_id
                     info = {'dataset_id': dataset.id, 'image_id': img_id, 'object_id': object_id, 'object_cls': obj_cls, 'crop_yxyx': yxyx, 'updated_at': upd}
                     to_add_info_list.append(info)
+                progress.iter_done()
     
     # to remove imgs
     to_del_img_ids = list(set(img_id2upd) - set(all_dataset_img_ids))
 
     print('to_del:', len(to_del_img_ids))
     print('to_add:', len(to_add_info_list))
+    if len(to_del_img_ids) == 0 and len(to_add_info_list) == 0:
+        print('embeddings are up to date!')
+        exit()
 
 
     info_updated = info_old_list
@@ -253,6 +259,7 @@ if __name__ == '__main__':
     with open(save_paths['cfg'], 'w') as f:
         json.dump(cfg, f)
     torch.save(embeddings, save_paths['embeddings'])
+    print('uploading to team_files...')
     api.file.upload_bulk(team_id, list(save_paths.values()), list(save_paths.values()))
 
     print('result shape:', embeddings.shape)
