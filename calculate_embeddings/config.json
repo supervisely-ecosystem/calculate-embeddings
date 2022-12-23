@@ -4,7 +4,7 @@
   "name": "Calculate Embeddings",
   "description": "Calculate Embeddings",
   "headless": true,
-  "entrypoint": "python calculate-embeddings/src/main.py",
+  "entrypoint": "python calculate_embeddings/src/main.py",
   "icon": "https://user-images.githubusercontent.com/12828725/183916661-224ff8cb-a3d1-4b82-a629-def8c6de1db5.png",
   "poster": "https://colah.github.io/posts/2014-07-NLP-RNNs-Representations/img/Socher-ImageClassManifold.png",
   "categories": [
