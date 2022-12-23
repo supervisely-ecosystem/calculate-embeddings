@@ -8,7 +8,7 @@ import sklearn.manifold
 import sklearn.cluster
 import sklearn.decomposition
 import umap
-import matplotlib
+import matplotlib.cm
 from supervisely.app.widgets import Apexchart, Container, Card, LabeledImage, Text
 
 
