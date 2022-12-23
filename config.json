@@ -18,6 +18,6 @@
     "context_category": "Metric Learning"
   },
   "min_instance_version": "6.5.22",
-  "release": { "version":"v1.0.0", "name":"init" },
+  "release": { "version":"v1.0.1", "name":"init" },
   "slug": "poldersen2/calculate-embeddings"
 }
