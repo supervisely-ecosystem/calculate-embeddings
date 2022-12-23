@@ -120,9 +120,9 @@ if __name__ == '__main__':
         'embeddings': f"{path_prefix}/{save_name}_embeddings.pt"
     }
     os.makedirs(path_prefix, exist_ok=True)
-    if api.file.exists(team_id, save_paths['info']):
-        api.file.download(team_id, save_paths['info'], save_paths['info'])
-        api.file.download(team_id, save_paths['embeddings'], save_paths['embeddings'])
+    if api.file.exists(team_id, '/'+save_paths['info']):
+        api.file.download(team_id, '/'+save_paths['info'], save_paths['info'])
+        api.file.download(team_id, '/'+save_paths['embeddings'], save_paths['embeddings'])
         with open(save_paths['info'], 'r') as f:
             info_old = json.load(f)
         embeddings = torch.load(save_paths['embeddings'])
@@ -253,5 +253,5 @@ if __name__ == '__main__':
     torch.save(embeddings, save_paths['embeddings'])
     api.file.upload_bulk(team_id, list(save_paths.values()), list(save_paths.values()))
 
+    print('result shape:', embeddings.shape)
     print('done')
-    print(embeddings.shape)
