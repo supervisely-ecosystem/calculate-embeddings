@@ -83,6 +83,7 @@ if __name__ == '__main__':
     np_dtype = np.float32
     
     save_name = model_name.replace('/','_')
+    print('v1.0.1')
 
     load_dotenv("local.env")
     load_dotenv(os.path.expanduser("~/supervisely.env"))
