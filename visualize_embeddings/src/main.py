@@ -9,7 +9,7 @@ import sklearn.decomposition
 import umap
 from supervisely.app.widgets import Apexchart, Container, Card, Button, Progress, LabeledImage, Table, Text
 
-import .color_names as color_names
+from .src import color_names
 
 
 projection_method = 'PCA-UMAP'  # ['PCA', 'UMAP', 't-SNE', 'PCA-UMAP']
