@@ -40,7 +40,8 @@ def calculate_projections(projection_method, metric="euclidean", umap_min_dist=0
     return projections
 
 
-projection_method = "UMAP"  # ['PCA', 'UMAP', 't-SNE', 'PCA-UMAP', 'PCA-t-SNE']
+available_methods = ["PCA", "UMAP", "t-SNE", "PCA-UMAP", "PCA-t-SNE"]
+projection_method = "UMAP"
 umap_min_dist = 0.05
 metric = "euclidean"  # ['euclidean', 'cosine']
 force_recalculate = False
@@ -57,7 +58,7 @@ team_id = sly.env.team_id(raise_not_found=False) or api.team.get_list()[0].id
 projection_method = os.environ.get("modal.state.projection_method")
 force_recalculate = os.environ.get("modal.state.force_recalculate", False)
 
-if projection_method not in ["PCA", "UMAP", "t-SNE", "PCA-UMAP", "PCA-t-SNE"]:
+if projection_method not in available_methods:
     projection_method = "UMAP"
     print("cant't find projection_method, setting to default:", projection_method)
 
@@ -118,7 +119,12 @@ for i in range(len(all_info_list)):
 
 series = [{"name": k, "data": v} for k, v in series.items()]
 
-chart = ScatterChart(title="Embeddings", series=series, xaxis_type="numeric", height=400)
+chart = ScatterChart(
+    title=f"{save_name} {projection_method} projections",
+    series=series,
+    xaxis_type="numeric",
+    height=450,
+)
 
 
 card = Card(title="Embeddings Cloud", content=chart)
