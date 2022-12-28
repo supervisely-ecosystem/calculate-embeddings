@@ -124,6 +124,7 @@ if __name__ == "__main__":
         team_id = api.team.get_list()[0].id
 
     # init model
+    print(f"Running model on {device}")
     model, cfg, format_input = infer_utils.create_model(model_name)
     model.to(device)
     input_size_hw = cfg["input_size"]
@@ -261,7 +262,7 @@ if __name__ == "__main__":
     print("to_del:", len(to_del_img_ids))
     print("to_add:", len(to_add_info_list))
     if len(to_del_img_ids) == 0 and len(to_add_info_list) == 0:
-        print("embeddings are up to date!")
+        print("All embeddings are up to date!")
         exit()
 
     info_updated = info_old_list

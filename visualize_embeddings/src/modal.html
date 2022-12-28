@@ -1,0 +1,20 @@
+<div>
+
+    <sly-field title="Projection Method"
+        description="">
+    </sly-field>
+    <!-- <el-input placeholder="Enter Projection Method" v-model="state.projection_method"></el-input> -->
+    <el-select v-model="state.projection_method" placeholder="UMAP">
+        <el-option
+          :key="0"
+          :label="UMAP"
+          :value="UMAP">
+        </el-option>
+        <el-option
+          :key="1"
+          :label="PCA"
+          :value="PCA">
+        </el-option>
+      </el-select>
+
+</div>

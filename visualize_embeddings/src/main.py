@@ -1,5 +1,6 @@
 import os
 import json
+from collections import defaultdict
 import numpy as np
 import supervisely as sly
 from dotenv import load_dotenv
@@ -12,17 +13,17 @@ import matplotlib.cm
 from supervisely.app.widgets import ScatterChart, Container, Card, LabeledImage, Text
 
 
-def calculate_projections(projection_method, metric="euclidean"):
+def calculate_projections(projection_method, metric="euclidean", umap_min_dist=0.1):
     if projection_method == "PCA":
         decomp = sklearn.decomposition.PCA(2)
         projections = decomp.fit_transform(embeddings)
     elif projection_method == "UMAP":
-        decomp = umap.UMAP(min_dist=0.03, metric=metric)
+        decomp = umap.UMAP(min_dist=umap_min_dist, metric=metric)
         projections = decomp.fit_transform(embeddings)
     elif projection_method == "PCA-UMAP":
         decomp = sklearn.decomposition.PCA(64)
         projections = decomp.fit_transform(embeddings)
-        decomp = umap.UMAP(min_dist=0.03, metric=metric)
+        decomp = umap.UMAP(min_dist=umap_min_dist, metric=metric)
         projections = decomp.fit_transform(projections)
     elif projection_method == "t-SNE":
         decomp = sklearn.manifold.TSNE(
@@ -40,6 +41,7 @@ def calculate_projections(projection_method, metric="euclidean"):
 
 
 projection_method = "UMAP"  # ['PCA', 'UMAP', 't-SNE', 'PCA-UMAP', 'PCA-t-SNE']
+umap_min_dist = 0.05
 metric = "euclidean"  # ['euclidean', 'cosine']
 
 load_dotenv("local.env")
@@ -51,6 +53,10 @@ project_id = sly.env.project_id()
 project = api.project.get_info_by_id(project_id)
 project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
 team_id = sly.env.team_id(raise_not_found=False) or api.team.get_list()[0].id
+projection_method = os.environ.get("modal.state.projection_method")
+if not projection_method:
+    projection_method = "UMAP"
+    print("cant't find projection_method, setting to default:", projection_method)
 
 model_name = "facebook/convnext-tiny-224"
 save_name = model_name.replace("/", "_")
@@ -84,7 +90,9 @@ if api.file.exists(team_id, "/" + save_paths["projections"]):
     projections = torch.load(save_paths["projections"])
 else:
     print("calculating projections...")
-    projections = calculate_projections(projection_method, metric=metric)
+    projections = calculate_projections(
+        projection_method, metric=metric, umap_min_dist=umap_min_dist
+    )
     torch.save(projections, save_paths["projections"])
     print("uploading projections to team_files...")
     api.file.upload(team_id, save_paths["projections"], save_paths["projections"])
@@ -96,14 +104,18 @@ colors = [matplotlib.colors.rgb2hex(cm(x)) for x in np.linspace(0, 1, len(obj_cl
 to_color = dict(zip(obj_classes, colors))
 x = projections[:, 1].tolist()
 y = projections[:, 0].tolist()
-s1 = [
-    {"x": x_i, "y": y_i, "fillColor": to_color[all_info_list[i]["object_cls"]]}
-    for i, (x_i, y_i) in enumerate(zip(x, y))
-]
+print(f"n_classes = {len(obj_classes)}")
 
-chart = ScatterChart(
-    series=[{"name": "y", "data": s1}],
-)
+series = defaultdict(list)
+global_idxs_mapping = defaultdict(list)
+for i in range(len(all_info_list)):
+    obj_cls = str(all_info_list[i]["object_cls"])
+    series[obj_cls].append({"x": x[i], "y": y[i]})
+    global_idxs_mapping[obj_cls].append(i)
+
+series = [{"name": k, "data": v} for k, v in series.items()]
+
+chart = ScatterChart(title="Embeddings", series=series, xaxis_type="numeric", height=400)
 
 
 card = Card(title="Embeddings Cloud", content=chart)
@@ -117,10 +129,11 @@ app = sly.Application(
 
 @chart.click
 def on_click(datapoint: ScatterChart.ClickedDataPoint):
-    idx = datapoint.data_index
-    print(idx, datapoint.x, datapoint.y)
-    print(all_info_list[idx]["image_id"], all_info_list[idx]["object_cls"])
-    show_image(all_info_list[idx])
+    idx = global_idxs_mapping[datapoint.series_name][datapoint.data_index]
+    info = all_info_list[idx]
+    print(datapoint.data_index, idx, info["image_id"], info["object_cls"])
+    print(info["image_id"], info["object_cls"])
+    show_image(info)
 
 
 def show_image(info):
