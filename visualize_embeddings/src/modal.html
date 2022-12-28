@@ -1,5 +1,9 @@
 <div>
 
+    <sly-field title="Model Name">
+        <el-input placeholder="openai/clip-vit-base-patch32" v-model="state.model_name"></el-input>
+    </sly-field>
+
     <sly-field title="Projection Method">
         <!-- <el-input placeholder="Enter Projection Method" v-model="state.projection_method"></el-input> -->
         <el-select v-model="state.projection_method" placeholder="UMAP">

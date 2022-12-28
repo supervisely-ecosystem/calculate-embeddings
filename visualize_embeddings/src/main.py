@@ -45,6 +45,7 @@ projection_method = "UMAP"
 umap_min_dist = 0.05
 metric = "euclidean"  # ['euclidean', 'cosine']
 force_recalculate = False
+model_name = "facebook/convnext-tiny-224"
 
 load_dotenv("local.env")
 load_dotenv(os.path.expanduser("~/supervisely.env"))
@@ -57,12 +58,12 @@ project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
 team_id = sly.env.team_id(raise_not_found=False) or api.team.get_list()[0].id
 projection_method = os.environ.get("modal.state.projection_method")
 force_recalculate = os.environ.get("modal.state.force_recalculate", False)
+model_name = os.environ["modal.state.model_name"]
 
 if projection_method not in available_methods:
     projection_method = "UMAP"
     print("cant't find projection_method, setting to default:", projection_method)
 
-model_name = "facebook/convnext-tiny-224"
 save_name = model_name.replace("/", "_")
 
 # load embeddings if exists
