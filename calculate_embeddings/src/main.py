@@ -1,4 +1,5 @@
 import supervisely as sly
+from supervisely.sly_logger import logger
 from dotenv import load_dotenv
 import json
 import os
@@ -90,6 +91,19 @@ def normalize(img_batch, mean, std, np_dtype=np.float32):
 
 if __name__ == "__main__":
 
+    # example_model_names = [
+    #     "maxvit_large_tf_384.in21k_ft_in1k",
+    #     "facebook/convnext-xlarge-224-22k",
+    #     "beitv2_large_patch16_224",
+    #     "beitv2_large_patch16_224_in22k",
+    #     "openai/clip-vit-base-patch32",
+    #     "openai/clip-vit-large-patch14",
+    #     "facebook/flava-full",
+    #     "facebook/convnext-large-384",
+    #     "microsoft/beit-large-patch16-224-pt22k",
+    #     "microsoft/beit-large-patch16-384",
+    # ]
+
     model_name = "facebook/convnext-tiny-224"
     instance_mode = "both"
     batch_size = 2
@@ -97,8 +111,6 @@ if __name__ == "__main__":
     batch_size_api = 50
     instance_rect_expand = [0, 0]
     np_dtype = np.float32
-
-    save_name = model_name.replace("/", "_")
 
     load_dotenv("local.env")
     load_dotenv(os.path.expanduser("~/supervisely.env"))
@@ -108,6 +120,11 @@ if __name__ == "__main__":
     project_id = sly.env.project_id(raise_not_found=False)
     dataset_id = sly.env.dataset_id(raise_not_found=False)
     team_id = sly.env.team_id(raise_not_found=False)
+    model_name = os.environ["modal.state.model_name"]
+    batch_size = os.environ["state.batch_size"]
+
+    save_name = model_name.replace("/", "_")
+
     assert (project_id is not None) or (
         dataset_id is not None
     ), "either project_id or dataset_id must be set in local.env"
@@ -216,7 +233,9 @@ if __name__ == "__main__":
                 to_infer_img_ids.append(img_id)
 
         # Infer and collect info
-        progress = sly.Progress(f"Infer dataset {dataset.name}", len(to_infer_img_ids))
+        progress = sly.Progress(
+            f"Infer dataset {dataset.name}", len(to_infer_img_ids), ext_logger=logger
+        )
         for image_ids in sly.batched(to_infer_img_ids, batch_size=batch_size_api):
             images = api.image.download_nps(dataset.id, image_ids)
             anns_json = api.annotation.download_json_batch(dataset.id, image_ids)

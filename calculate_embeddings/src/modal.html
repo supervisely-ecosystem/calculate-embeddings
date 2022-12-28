@@ -1,0 +1,11 @@
+<div>
+
+    <sly-field title="Model Name">
+        <el-input placeholder="openai/clip-vit-base-patch32" v-model="state.model_name"></el-input>
+    </sly-field>
+
+    <sly-field title="Batch Size">
+        <el-input-number v-model="state.batch_size" min="1" value="4"></el-input-number>
+    </sly-field>
+
+</div>
