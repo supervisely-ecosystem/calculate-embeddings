@@ -43,6 +43,7 @@ def calculate_projections(projection_method, metric="euclidean", umap_min_dist=0
 projection_method = "UMAP"  # ['PCA', 'UMAP', 't-SNE', 'PCA-UMAP', 'PCA-t-SNE']
 umap_min_dist = 0.05
 metric = "euclidean"  # ['euclidean', 'cosine']
+force_recalculate = False
 
 load_dotenv("local.env")
 load_dotenv(os.path.expanduser("~/supervisely.env"))
@@ -54,7 +55,9 @@ project = api.project.get_info_by_id(project_id)
 project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
 team_id = sly.env.team_id(raise_not_found=False) or api.team.get_list()[0].id
 projection_method = os.environ.get("modal.state.projection_method")
-if not projection_method:
+force_recalculate = os.environ.get("modal.state.force_recalculate", False)
+
+if projection_method not in ["PCA", "UMAP", "t-SNE", "PCA-UMAP", "PCA-t-SNE"]:
     projection_method = "UMAP"
     print("cant't find projection_method, setting to default:", projection_method)
 
@@ -67,7 +70,7 @@ save_paths = {
     "info": f"{path_prefix}/{save_name}_info.json",
     "cfg": f"{path_prefix}/{save_name}_cfg.json",
     "embeddings": f"{path_prefix}/{save_name}_embeddings.pt",
-    "projections": f"{path_prefix}/{save_name}_{projection_method}_projections.pt",
+    "projections": f"{path_prefix}/{save_name}_projections_{projection_method}_{metric}.pt",
 }
 os.makedirs(path_prefix, exist_ok=True)
 if api.file.exists(team_id, "/" + save_paths["info"]):
@@ -85,7 +88,7 @@ else:
 
 all_info_list = [dict(tuple(zip(all_info.keys(), vals))) for vals in zip(*list(all_info.values()))]
 
-if api.file.exists(team_id, "/" + save_paths["projections"]):
+if api.file.exists(team_id, "/" + save_paths["projections"]) and not force_recalculate:
     api.file.download(team_id, "/" + save_paths["projections"], save_paths["projections"])
     projections = torch.load(save_paths["projections"])
 else:
