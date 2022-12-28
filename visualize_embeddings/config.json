@@ -5,7 +5,7 @@
   "description": "Visualize Embeddings",
   "entrypoint": "python -m uvicorn visualize_embeddings.src.main:app --host 0.0.0.0 --port 8000",
   "port": 8000,
-  "modal_template": "src/modal.html",
+  "modal_template": "visualize_embeddings/src/modal.html",
   "modal_template_state": {
     "projection_method": "UMAP"
   },
