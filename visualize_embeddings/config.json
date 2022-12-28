@@ -23,6 +23,6 @@
     "context_category": "Metric Learning"
   },
   "min_instance_version": "6.5.22",
-  "release": { "version":"v1.0.84", "name":"test" },
+  "release": { "version":"v1.0.86", "name":"test" },
   "slug": "poldersen2/visualize-embeddings"
 }
