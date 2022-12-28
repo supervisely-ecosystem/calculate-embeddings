@@ -1,20 +1,16 @@
 <div>
 
-    <sly-field title="Projection Method"
-        description="">
+    <sly-field title="Projection Method">
+        <!-- <el-input placeholder="Enter Projection Method" v-model="state.projection_method"></el-input> -->
+        <el-select v-model="state.projection_method" placeholder="UMAP">
+            <el-option key="UMAP" label="UMAP" value="UMAP"></el-option>
+            <el-option key="PCA" label="PCA" value="PCA"></el-option>
+            <el-option key="t-SNE" label="t-SNE" value="t-SNE"></el-option>
+            <el-option key="PCA-UMAP" label="PCA-UMAP" value="PCA-UMAP"></el-option>
+            <el-option key="PCA-t-SNE" label="PCA-t-SNE" value="PCA-t-SNE"></el-option>
+        </el-select>
     </sly-field>
-    <!-- <el-input placeholder="Enter Projection Method" v-model="state.projection_method"></el-input> -->
-    <el-select v-model="state.projection_method" placeholder="UMAP">
-        <el-option
-          :key="0"
-          :label="UMAP"
-          :value="UMAP">
-        </el-option>
-        <el-option
-          :key="1"
-          :label="PCA"
-          :value="PCA">
-        </el-option>
-      </el-select>
 
+    <el-checkbox v-model="state.force_recalculate">Force recalculate</el-checkbox>
+	
 </div>
