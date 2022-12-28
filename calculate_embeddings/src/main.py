@@ -11,7 +11,7 @@ from collections import defaultdict
 import infer_utils
 
 
-print(f"{torch.__version__}, {torch.version.cuda}")
+print(f"{torch.__version__}, {torch.version.cuda}, {torch.cuda.is_available()}")
 
 
 def get_crops(img_np, yxyx_coords, hw_expand=(0, 0)):
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     dataset_id = sly.env.dataset_id(raise_not_found=False)
     team_id = sly.env.team_id(raise_not_found=False)
     model_name = os.environ["modal.state.model_name"]
-    batch_size = os.environ["modal.state.batch_size"]
+    batch_size = int(os.environ["modal.state.batch_size"])
 
     save_name = model_name.replace("/", "_")
 
