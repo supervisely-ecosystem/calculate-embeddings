@@ -187,7 +187,7 @@ card_run = Card(title="Run", content=content)
 chart = ScatterChart(
     title=f"None",
     xaxis_type="numeric",
-    height=450,
+    height=600,
     # series=series,
     # colors=colors,
 )
