@@ -1,4 +1,6 @@
 import os
+
+print(os.getcwd())
 import json
 from collections import defaultdict
 import numpy as np
@@ -29,8 +31,8 @@ from supervisely.app.widgets import (
     ProjectSelector,
 )
 
-import src.run_utils as run_utils
-import src.calculate_embeddings as calculate_embeddings
+from . import run_utils
+from . import calculate_embeddings
 
 
 def normalize_string(s):
