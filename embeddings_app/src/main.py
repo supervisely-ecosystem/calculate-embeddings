@@ -1,6 +1,6 @@
-import os
+import os, sys
 
-print(os.getcwd())
+print(sys.path)
 import json
 from collections import defaultdict
 import numpy as np
@@ -33,6 +33,11 @@ from supervisely.app.widgets import (
 
 from . import run_utils
 from . import calculate_embeddings
+
+try:
+    import embeddings_app.src.run_utils
+except:
+    print("Did not import again...")
 
 
 def normalize_string(s):
@@ -222,6 +227,7 @@ def table_on_click(item: Table.ClickedDataPoint):
     team_id = int(project_selector.get_selected_team_id(StateJson()))
     if api.file.exists(team_id, "/" + save_paths["cfg"]):
         print(f"{model_name} exists!")
+        api.file.download(team_id, "/" + save_paths["cfg"], save_paths["cfg"])
         with open(save_paths["cfg"], "r") as f:
             cfg = json.load(f)
         StateJson()[select_instance_mode._content.widget_id]["value"] = cfg["instance_mode"]

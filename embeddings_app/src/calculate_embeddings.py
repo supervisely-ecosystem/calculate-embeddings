@@ -202,7 +202,7 @@ def calculate_embeddings(
         # Infer and collect info
         if progress_widget and len(to_infer_img_ids):
             progress_bar = progress_widget(
-                f"Infer dataset {dataset.name}...",
+                message=f"Infer dataset {dataset.name}...",
                 total=len(to_infer_img_ids),
             )
         for image_ids in sly.batched(to_infer_img_ids, batch_size=batch_size_api):
