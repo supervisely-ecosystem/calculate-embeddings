@@ -29,8 +29,8 @@ from supervisely.app.widgets import (
     ProjectSelector,
 )
 
-import run_utils
-import calculate_embeddings
+import src.run_utils as run_utils
+import src.calculate_embeddings as calculate_embeddings
 
 
 def normalize_string(s):
