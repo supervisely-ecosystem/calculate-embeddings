@@ -200,7 +200,7 @@ def calculate_embeddings(
                 to_infer_img_ids.append(img_id)
 
         # Infer and collect info
-        if progress_widget:
+        if progress_widget and len(to_infer_img_ids):
             progress_bar = progress_widget(
                 f"Infer dataset {dataset.name}...",
                 total=len(to_infer_img_ids),
