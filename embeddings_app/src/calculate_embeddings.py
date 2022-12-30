@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from collections import defaultdict
 
-import src.infer_utils as infer_utils
+from . import infer_utils
 
 
 # example_model_names = [
