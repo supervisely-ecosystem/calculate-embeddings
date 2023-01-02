@@ -9,7 +9,7 @@ import sklearn.manifold
 import sklearn.cluster
 import sklearn.decomposition
 import umap
-import matplotlib.cm
+from matplotlib.colors import rgb2hex
 from supervisely.app.widgets import ScatterChart, Container, Card, LabeledImage, Text
 
 
@@ -56,9 +56,9 @@ project_id = sly.env.project_id()
 project = api.project.get_info_by_id(project_id)
 project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
 team_id = sly.env.team_id(raise_not_found=False) or api.team.get_list()[0].id
-projection_method = os.environ.get("modal.state.projection_method")
-force_recalculate = os.environ.get("modal.state.force_recalculate", False)
-model_name = os.environ["modal.state.model_name"]
+model_name = os.environ.get("modal.state.model_name", model_name)
+projection_method = os.environ.get("modal.state.projection_method", projection_method)
+force_recalculate = os.environ.get("modal.state.force_recalculate", force_recalculate)
 
 if projection_method not in available_methods:
     projection_method = "UMAP"
@@ -104,27 +104,29 @@ else:
 
 
 obj_classes = list(set(all_info["object_cls"]))
-cm = matplotlib.cm.get_cmap("gist_rainbow")
-colors = [matplotlib.colors.rgb2hex(cm(x)) for x in np.linspace(0, 1, len(obj_classes))]
-to_color = dict(zip(obj_classes, colors))
+print(f"n_classes = {len(obj_classes)}")
 x = projections[:, 1].tolist()
 y = projections[:, 0].tolist()
-print(f"n_classes = {len(obj_classes)}")
 
 series = defaultdict(list)
 global_idxs_mapping = defaultdict(list)
 for i in range(len(all_info_list)):
-    obj_cls = str(all_info_list[i]["object_cls"])
+    obj_cls = str(all_info_list[i]["object_cls"] or "Image")
     series[obj_cls].append({"x": x[i], "y": y[i]})
     global_idxs_mapping[obj_cls].append(i)
 
 series = [{"name": k, "data": v} for k, v in series.items()]
+obj2color = {x.name: rgb2hex(np.array(x.color) / 255) for x in project_meta.obj_classes.items()}
+obj2color["Image"] = "#222222"
+colors = [obj2color[s["name"]] for s in series]
+
 
 chart = ScatterChart(
     title=f"{save_name} {projection_method} projections",
     series=series,
     xaxis_type="numeric",
     height=450,
+    colors=colors,
 )
 
 

@@ -105,7 +105,7 @@ def normalize(img_batch, mean, std, np_dtype=np.float32):
     return (img_batch - mean) / std
 
 
-def calculate_embeddings(
+def calculate_embeddings_if_needed(
     api,
     model_name,
     datasets,
@@ -117,6 +117,7 @@ def calculate_embeddings(
     expand_hw,
     project_meta,
     progress_widget=None,
+    info_widget=None,
 ):
     batch_size_api = 50
     np_dtype = np.float32
@@ -132,16 +133,30 @@ def calculate_embeddings(
         }
         embeddings = None
 
-    # init model
-    print(f"Running model on {device}")
-    model, cfg, format_input = infer_utils.create_model(model_name)
-    model.to(device)
-    input_size_hw = cfg["input_size"]
-    resize_interpolation = cfg["interpolation"]
-    cfg["expand_hw"] = expand_hw
-    cfg["instance_mode"] = instance_mode
+    global model
+    model = None
+
+    def init_model(model_name, device):
+        if info_widget is not None:
+            info_widget.description += (
+                f'downloading the model "{model_name}" on "{device}", it may take a minutes...<br>'
+            )
+        print(f"Running model on {device}")
+        model, cfg, format_input = infer_utils.create_model(model_name)
+        model.to(device)
+        input_size_hw = cfg["input_size"]
+        resize_interpolation = cfg["interpolation"]
+        cfg["expand_hw"] = expand_hw
+        cfg["instance_mode"] = instance_mode
+        return model, cfg, format_input, input_size_hw, resize_interpolation
 
     def infer_one(image, labels, instance_mode):
+        global model, cfg, format_input, input_size_hw, resize_interpolation
+        # lazy init
+        if model is None:
+            model, cfg, format_input, input_size_hw, resize_interpolation = init_model(
+                model_name, device
+            )
         crops, crops_obj_cls, crops_yxyx, filtered_labels = extract_crops(
             image,
             labels,
@@ -202,7 +217,7 @@ def calculate_embeddings(
         # Infer and collect info
         if progress_widget and len(to_infer_img_ids):
             progress_bar = progress_widget(
-                message=f"Infer dataset {dataset.name}...",
+                message=f"Infering dataset {dataset.name}...",
                 total=len(to_infer_img_ids),
             )
         for image_ids in sly.batched(to_infer_img_ids, batch_size=batch_size_api):
@@ -211,7 +226,6 @@ def calculate_embeddings(
             annotations = [sly.Annotation.from_json(ann, project_meta) for ann in anns_json]
             assert len(images) == len(annotations)
             for img_id, image, ann in zip(image_ids, images, annotations):
-                print(img_id)
                 new_embeds, crops_obj_cls, crops_yxyx, filtered_labels = infer_one(
                     image, ann.labels, instance_mode=instance_mode
                 )
@@ -258,7 +272,7 @@ def calculate_embeddings(
     print("to_add:", len(to_add_embeds))
     if len(to_del_img_ids) == 0 and len(to_add_info_list) == 0:
         print("All embeddings are up to date!")
-        return embeddings, info_old, cfg, False
+        return None, None, None, False
 
     info_updated = info_old_list
     # 1. remove
