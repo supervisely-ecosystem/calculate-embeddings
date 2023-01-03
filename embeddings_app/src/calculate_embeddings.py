@@ -139,7 +139,7 @@ def calculate_embeddings_if_needed(
     def init_model(model_name, device):
         if info_widget is not None:
             info_widget.description += (
-                f'downloading the model "{model_name}" on "{device}", it may take a minutes...<br>'
+                f'downloading the model "{model_name}", it may take a minutes...<br>'
             )
         print(f"Running model on {device}")
         model, cfg, format_input = infer_utils.create_model(model_name)
@@ -149,7 +149,7 @@ def calculate_embeddings_if_needed(
         cfg["expand_hw"] = expand_hw
         cfg["instance_mode"] = instance_mode
         if info_widget is not None:
-            info_widget.description += f"Infering dataset...<br>"
+            info_widget.description += f'Infering dataset on "{device}"...<br>'
         return model, cfg, format_input, input_size_hw, resize_interpolation
 
     def infer_one(image, labels, instance_mode):

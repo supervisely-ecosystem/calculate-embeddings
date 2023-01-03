@@ -328,7 +328,7 @@ def run():
     if need_recalculate:
         embeddings = None
         all_info = None
-        info_run.description += "some parameters are force to recalculate the embeddings<br>"
+        info_run.description += "some parameters force to recalculate the embeddings!<br>"
 
     # 3. Calculate or upadate embeddings
     out = calculate_embeddings.calculate_embeddings_if_needed(
