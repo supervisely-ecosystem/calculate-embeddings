@@ -148,6 +148,8 @@ def calculate_embeddings_if_needed(
         resize_interpolation = cfg["interpolation"]
         cfg["expand_hw"] = expand_hw
         cfg["instance_mode"] = instance_mode
+        if info_widget is not None:
+            info_widget.description += f"Infering dataset...<br>"
         return model, cfg, format_input, input_size_hw, resize_interpolation
 
     def infer_one(image, labels, instance_mode):

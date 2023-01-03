@@ -38,7 +38,6 @@ def list2items(values):
 
 
 def get_save_paths(model_name, project, projection_method=None, metric=None):
-    # TODO: separate folder for every project/model
     save_name = model_name.replace("/", "_")
     path_prefix = f"embeddings/{normalize_string(project.name)}_{project.id}/{save_name}"
     save_paths = {
@@ -48,6 +47,17 @@ def get_save_paths(model_name, project, projection_method=None, metric=None):
         "projections": f"{path_prefix}/projections_{projection_method}_{metric}.pt",
     }
     return path_prefix, save_paths
+
+
+def get_calculated_models_for_project(files_list, project):
+    """Finds for what models we have calculated embeddings for the project"""
+    model_name2save_path = {}
+    for x in files_list:
+        x = x["path"]
+        s = x.split("/")
+        if s[-1] == "embeddings.pt" and s[-3] == f"{normalize_string(project.name)}_{project.id}":
+            model_name2save_path[s[-2]] = "/".join(s[:-1])
+    return model_name2save_path
 
 
 ### Globals init
@@ -81,6 +91,9 @@ else:
     team_id = None
     workspace_id = None
 
+files_list = api.file.list(team_id, "/embeddings")
+model_name2save_path = get_calculated_models_for_project(files_list, project)
+
 
 ### Project selection
 project_selector = ProjectSelector(team_id, workspace_id, project_id)
@@ -106,13 +119,13 @@ card_project_settings = Card(title="Project selection", content=project_selector
 
 
 ### Model selection
-columns_names = ["Name", "Model size", "Architecture type"]
+columns_names = ["Name", "Model size", "Architecture type", "Already calculated"]
 items = [
-    ["openai/clip-vit-base-patch32", "605 MB", "Transformer"],
-    ["openai/clip-vit-large-patch14", "1710 MB", "Transformer"],
     ["facebook/convnext-tiny-224", "114 MB", "ConvNet"],
     ["facebook/convnext-large-384", "791 MB", "ConvNet"],
     ["facebook/convnext-xlarge-224-22k", "1570 MB", "ConvNet"],
+    ["openai/clip-vit-base-patch32", "605 MB", "Transformer"],
+    ["openai/clip-vit-large-patch14", "1710 MB", "Transformer"],
     ["facebook/flava-full", "1430 MB", "Tramsformer"],
     ["microsoft/beit-large-patch16-224-pt22k", "1250 MB", "Tramsformer"],
     ["microsoft/beit-large-patch16-384", "1280 MB", "Tramsformer"],
@@ -120,12 +133,16 @@ items = [
     ["beitv2_large_patch16_224_in22k", "1310 MB", "Tramsformer"],
     # ["maxvit_large_tf_384.in21k_ft_in1k", "849 MB", "ConvNet+Transformer"],  # now it is at pre-release in timm lib
 ]
+already_calculated = [item[0].replace("/", "_") in model_name2save_path for item in items]
+bool2str = {True: "✔", False: "✖"}
+already_calculated = [bool2str[x] for x in already_calculated]
+items = list(zip(*zip(*items), already_calculated))
 # data = {col: v for col, v in zip(columns_names, zip(*items))}
 table_model_select = RadioTable(columns_names, items)
 table_model_select_f = Field(table_model_select, "Click on the table to select a model:")
 input_select_model = Input("", placeholder="openai/clip-vit-base-patch32")
 desc_select_model = Text(
-    "...or type a model_name to download the model from <a href='https://huggingface.co/models'>HuggingFace</a> or <a href='https://huggingface.co/models?sort=downloads&search=timm%2F'>timm</a>",
+    "...or you can type a model_name from <a href='https://huggingface.co/models?sort=downloads&search=timm%2F'>timm</a>",
 )
 cuda_names = [
     f"cuda:{i} ({torch.cuda.get_device_name(i)})" for i in range(torch.cuda.device_count())
@@ -197,22 +214,19 @@ chart = ScatterChart(
     title=f"None",
     xaxis_type="numeric",
     height=600,
-    # series=series,
-    # colors=colors,
 )
 card_chart = Card(content=chart)
 labeled_image = LabeledImage()
 text = Text("no object selected")
-btn_toggle = Button("Toggle annotations", "info")
 show_all_anns = False
 cur_info = None
+btn_toggle = Button(f"Show all annotations: {show_all_anns}", "default", button_size="small")
 card_preview = Card(
     title="Object preview", content=Container(widgets=[labeled_image, text, btn_toggle])
 )
 card_embeddings_chart = Container(
     widgets=[card_chart, card_preview], direction="horizontal", fractions=[3, 1]
 )
-# card_embeddings_chart = Card(title="Embeddings Chart", content=content)
 card_embeddings_chart.hide()
 
 
@@ -230,33 +244,13 @@ app = sly.Application(
 )
 
 
-# @table_model_select.click
-# def table_on_click(item: Table.ClickedDataPoint):
-#     global model_name
-#     text_selected_model.text = f"Selected model: <b>{item.row['Name']}</b>"
-#     project_id = int(project_selector.get_selected_project_id(StateJson()))
-#     project = api.project.get_info_by_id(project_id)
-
-#     model_name = item.row["Name"]
-
-#     path_prefix, save_paths = get_save_paths(model_name, project)
-#     team_id = int(project_selector.get_selected_team_id(StateJson()))
-#     if api.file.exists(team_id, "/" + save_paths["cfg"]):
-#         print(f"{model_name} exists!")
-#         api.file.download(team_id, "/" + save_paths["cfg"], save_paths["cfg"])
-#         with open(save_paths["cfg"], "r") as f:
-#             cfg = json.load(f)
-#         StateJson()[select_instance_mode._content.widget_id]["value"] = cfg["instance_mode"]
-#         input_expand_wh._content.value = cfg["expand_hw"][0]
-#         info_run.description = "found existing embeddings<br>"
-#         # StateJson().send_changes()
-
-
 @btn_toggle.click
 def toggle_ann():
     global show_all_anns
     show_all_anns = not show_all_anns
-    show_image(cur_info, project_meta)
+    btn_toggle.text = f"Show all annotations: {show_all_anns}"
+    if cur_info:
+        show_image(cur_info, project_meta)
 
 
 @chart.click
@@ -264,8 +258,7 @@ def on_click(datapoint: ScatterChart.ClickedDataPoint):
     global global_idxs_mapping, all_info_list, project_meta
     idx = global_idxs_mapping[datapoint.series_name][datapoint.data_index]
     info = all_info_list[idx]
-    print(datapoint.data_index, idx, info["image_id"], info["object_cls"])
-    print(info["image_id"], info["object_cls"])
+    print(datapoint.data_index, idx, info["image_id"], info["object_cls"], show_all_anns)
     show_image(info, project_meta)
 
 
@@ -279,7 +272,7 @@ def show_image(info, project_meta):
     ann_json = api.annotation.download_json(image_id)
     if not show_all_anns:
         ann_json["objects"] = [obj for obj in ann_json["objects"] if obj["id"] == obj_id]
-    ann = sly.Annotation.from_json(ann_json, project_meta)
+    ann = sly.Annotation.from_json(ann_json, project_meta) if len(ann_json["objects"]) else None
 
     labeled_image.set(title=image.name, image_url=image.preview_url, ann=ann, image_id=image_id)
     text.set("object class: " + str(obj_cls), "info")
@@ -315,8 +308,6 @@ def run():
         datasets = api.dataset.get_list(project_id)
 
     path_prefix, save_paths = get_save_paths(model_name, project, projection_method, metric)
-
-    # TODO: when to recalculate projections?
 
     # 2. Load embeddings if exist
     need_recalculate = force_recalculate
@@ -358,7 +349,7 @@ def run():
     if is_updated:
         embeddings, all_info, cfg = out[:3]
 
-    # 4. Save embeddings if was updated
+    # 4. Save embeddings if it was updated
     is_updated = is_updated or need_recalculate
     if is_updated:
         print("uploading embeddings to team_files...")
