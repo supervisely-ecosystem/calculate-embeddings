@@ -6,18 +6,20 @@
   "entrypoint": "python -m uvicorn embeddings_app.src.main:app --host 0.0.0.0 --port 8000",
   "port": 8000,
   "icon": "https://user-images.githubusercontent.com/12828725/183916661-224ff8cb-a3d1-4b82-a629-def8c6de1db5.png",
-  "poster": "https://colah.github.io/posts/2014-07-NLP-RNNs-Representations/img/Socher-ImageClassManifold.png",
+  "poster": "https://umap-learn.readthedocs.io/en/latest/_images/plotting_21_2.png",
   "categories": [
     "neural network",
     "images",
     "metric learning",
-    "nn tools"
+    "nn tools",
+    "visualization",
+    "exploration"
   ],
   "context_menu": {
     "target": ["images_project", "images_dataset"],
     "context_category": "Metric Learning"
   },
-  "min_instance_version": "6.5.22",
-  "release": { "version":"v0.0.10", "name":"beta" },
+  "min_instance_version": "6.68.76",
+  "release": { "version":"v0.1.0", "name":"beta" },
   "slug": "poldersen2/embeddings_app"
 }
