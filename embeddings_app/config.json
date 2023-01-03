@@ -19,7 +19,7 @@
     "target": ["images_project", "images_dataset"],
     "context_category": "Metric Learning"
   },
-  "min_instance_version": "6.68.45",
-  "release": { "version":"v0.1.1", "name":"beta" },
+  "min_instance_version": "6.5.22",
+  "release": { "version":"v0.1.2", "name":"beta" },
   "slug": "poldersen2/embeddings_app"
 }
