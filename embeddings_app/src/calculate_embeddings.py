@@ -26,7 +26,7 @@ from . import infer_utils
 
 
 def get_crops(img_np, yxyx_coords, hw_expand=(0, 0)):
-    # crop image to sub_images by yxyx coords
+    """Crop image to patches according to yxyx_coords"""
     crops = []
     h, w = hw_expand
     for yxyx in yxyx_coords:
@@ -47,7 +47,7 @@ def extract_crops(
     hw_expand=(0, 0),
     resize_interpolation=cv2.INTER_LINEAR,
 ):
-    # make all needed crops and resizes for image-annotation pair
+    """Make all needed crops and resizes for image-annotation pair"""
     # return.__len__ may lay in [0, K+1], where K == n_instances.
     # return.__len__ can be 0 if mode is 'instance' and no any instances on image.
     assert instance_mode in [
@@ -119,6 +119,7 @@ def calculate_embeddings_if_needed(
     progress_widget=None,
     info_widget=None,
 ):
+    """Calculate embbeddings trying to recalculate only changed images"""
     batch_size_api = 50
     np_dtype = np.float32
 

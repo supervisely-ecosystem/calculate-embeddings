@@ -104,20 +104,6 @@ if is_one_dataset_mode:
 card_project_settings = Card(title="Project selection", content=project_selector)
 
 
-# example_model_names = [
-#     "maxvit_large_tf_384.in21k_ft_in1k",
-#     "facebook/convnext-xlarge-224-22k",
-#     "beitv2_large_patch16_224",
-#     "beitv2_large_patch16_224_in22k",
-#     "openai/clip-vit-base-patch32",
-#     "openai/clip-vit-large-patch14",
-#     "facebook/flava-full",
-#     "facebook/convnext-large-384",
-#     "microsoft/beit-large-patch16-224-pt22k",
-#     "microsoft/beit-large-patch16-384",
-# ]
-
-
 ### Model selection
 columns_names = ["Name", "Model size", "Architecture type", "Already calculated"]
 items = [
