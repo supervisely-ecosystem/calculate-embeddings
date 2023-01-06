@@ -4,3 +4,4 @@ __pycache__
 secret.env
 supervisely
 embeddings
+embeddings_app/src/main2.py

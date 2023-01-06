@@ -10,6 +10,8 @@ from collections import defaultdict
 
 from . import infer_utils
 
+print(f"{torch.__version__}, {torch.version.cuda}, {torch.cuda.is_available()}")
+
 
 # example_model_names = [
 #     "maxvit_large_tf_384.in21k_ft_in1k",
@@ -77,10 +79,7 @@ def extract_crops(
             result_obj_cls.append(label.obj_class.name)
             result_labels.append(label)
         crops = get_crops(img_np, yxyx_croods, hw_expand=hw_expand)
-        crops = [
-            cv2.resize(crop, input_size_hw[::-1], interpolation=resize_interpolation)
-            for crop in crops
-        ]
+        crops = [cv2.resize(crop, input_size_hw[::-1], interpolation=resize_interpolation) for crop in crops]
         result_yxyx += yxyx_croods
         result_crops += crops
     assert len(result_crops) == len(result_obj_cls) == len(result_yxyx)
@@ -113,6 +112,7 @@ def calculate_embeddings_if_needed(
     batch_size,
     embeddings,
     info_old,
+    cfg,
     instance_mode,
     expand_hw,
     project_meta,
@@ -139,9 +139,7 @@ def calculate_embeddings_if_needed(
 
     def init_model(model_name, device):
         if info_widget is not None:
-            info_widget.description += (
-                f'downloading the model "{model_name}", it may take a minutes...<br>'
-            )
+            info_widget.description += f'downloading the model "{model_name}", it may take a minutes...<br>'
         print(f"Running model on {device}")
         model, cfg, format_input = infer_utils.create_model(model_name)
         model.to(device)
@@ -157,9 +155,7 @@ def calculate_embeddings_if_needed(
         global model, cfg, format_input, input_size_hw, resize_interpolation
         # lazy init
         if model is None:
-            model, cfg, format_input, input_size_hw, resize_interpolation = init_model(
-                model_name, device
-            )
+            model, cfg, format_input, input_size_hw, resize_interpolation = init_model(model_name, device)
         crops, crops_obj_cls, crops_yxyx, filtered_labels = extract_crops(
             image,
             labels,
@@ -185,9 +181,7 @@ def calculate_embeddings_if_needed(
         return np.concatenate(features), crops_obj_cls, crops_yxyx, filtered_labels
 
     # convert info to list [{},{},{},...]
-    info_old_list = [
-        dict(tuple(zip(info_old.keys(), vals))) for vals in zip(*list(info_old.values()))
-    ]
+    info_old_list = [dict(tuple(zip(info_old.keys(), vals))) for vals in zip(*list(info_old.values()))]
     img_id2idxs = defaultdict(list)
     img_id2upd = defaultdict(list)
     for i in range(len(info_old_list)):
