@@ -77,11 +77,11 @@ model_items = [
     ["facebook/convnext-xlarge-224-22k", "1570 MB", "ConvNet"],
     ["openai/clip-vit-base-patch32", "605 MB", "Transformer"],
     ["openai/clip-vit-large-patch14", "1710 MB", "Transformer"],
-    ["facebook/flava-full", "1430 MB", "Tramsformer"],
-    ["microsoft/beit-large-patch16-224-pt22k", "1250 MB", "Tramsformer"],
-    ["microsoft/beit-large-patch16-384", "1280 MB", "Tramsformer"],
-    ["beitv2_large_patch16_224", "1310 MB", "Tramsformer"],
-    ["beitv2_large_patch16_224_in22k", "1310 MB", "Tramsformer"],
+    ["facebook/flava-full", "1430 MB", "Transformer"],
+    ["microsoft/beit-large-patch16-224-pt22k", "1250 MB", "Transformer"],
+    ["microsoft/beit-large-patch16-384", "1280 MB", "Transformer"],
+    ["beitv2_large_patch16_224", "1310 MB", "Transformer"],
+    ["beitv2_large_patch16_224_in22k", "1310 MB", "Transformer"],
     # ["maxvit_large_tf_384.in21k_ft_in1k", "849 MB", "ConvNet+Transformer"],  # now it is at pre-release in timm lib
 ]
 files_list = api.file.list(team_id, "/embeddings")
@@ -89,7 +89,7 @@ rows = run_utils.get_rows(files_list, model_items, project_info)
 column_names = ["Name", "Model size", "Architecture type", "Already calculated"]
 table_model_select = RadioTable(column_names, rows)
 table_model_select_f = Field(table_model_select, "Click on the table to select a model:")
-input_select_model = Input("", placeholder="openai/clip-vit-base-patch32")
+input_select_model = Input("", placeholder="timm/vit_base_patch16_clip_224.openai")
 desc_select_model = Text(
     "...or you can type a model_name from <a href='https://huggingface.co/models?sort=downloads&search=timm%2F'>timm</a>",
 )
@@ -130,7 +130,7 @@ input_expand_wh = InputNumber(0, -10000, 10000)
 input_expand_wh_f = Field(
     input_expand_wh,
     "Expand crops (px)",
-    "Expand rectangles of the cropped objects by a few pixels on both XY sides. Used to give the model a little context on the boundary of an objects.",
+    "Expand rectangles of the cropped objects by a few pixels on both XY sides. Used to give the model a little context on the boundary of the objects.",
 )
 content = Container([select_instance_mode_f, input_expand_wh_f])
 card_preprocessing_settings = Card(title="Preprocessing settings", content=content, collapsable=True)
@@ -141,7 +141,7 @@ select_projection_method = SelectString(available_projection_methods)
 select_projection_method_f = Field(
     select_projection_method,
     "Projection method",
-    "How to project high-dimensional embeddings into 2D space for futher visualizaton in chart",
+    "A decomposition method: how to project the high-dimensional embeddings onto 2D space for further visualization.",
 )
 select_metric = SelectString(["euclidean", "cosine"])
 select_metric_f = Field(select_metric, "Metric", "The parameter for projection method")
