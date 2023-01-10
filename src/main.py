@@ -319,9 +319,9 @@ def run():
         torch.save(projections, save_paths["projections"])
         api.file.upload(team_id, save_paths["projections"], save_paths["projections"])
     file_id = str(api.file.get_info_by_path(team_id, "/" + save_paths["embeddings"]).id)
-    server_addres = os.environ.get("SERVER_ADDRESS")
-    if server_addres:
-        url = f"{server_addres}/files/{file_id}"
+    server_address = os.environ.get("SERVER_ADDRESS")
+    if server_address:
+        url = f"{server_address}/files/{file_id}"
         info_run.description += f"all was saved to team_files: <a href={url}>{save_paths['embeddings']}</a><br>"
 
     # 6. Show chart
