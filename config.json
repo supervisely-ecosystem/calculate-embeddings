@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "name": "Embeddings App",
   "description": "Calculate and visualize embeddings",
-  "entrypoint": "python -m uvicorn embeddings_app.src.main:app --host 0.0.0.0 --port 8000",
+  "entrypoint": "python -m uvicorn src.main:app --host 0.0.0.0 --port 8000",
   "port": 8000,
   "icon": "https://user-images.githubusercontent.com/12828725/183916661-224ff8cb-a3d1-4b82-a629-def8c6de1db5.png",
   "poster": "https://umap-learn.readthedocs.io/en/latest/_images/plotting_21_2.png",
@@ -20,7 +20,7 @@
     "context_category": "Metric Learning"
   },
   "min_instance_version": "6.5.22",
-  "release": { "version":"v0.1.6", "name":"beta" },
+  "release": { "version":"v0.1.7", "name":"beta" },
   "slug": "poldersen2/embeddings_app",
   "need_gpu": true,
   "community_agent": false
