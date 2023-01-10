@@ -5,10 +5,10 @@ Embeddings App
 
 
 ## Features
-- **Any recent pre-trained models** from `HuggingFace` or [timm](https://huggingface.co/docs/timm/index) (such as CLIP, ConvNeXt, BEiT and others).
+- **Any recent pre-trained model** can be used from `HuggingFace` or [timm](https://huggingface.co/docs/timm/index) (OpenAI CLIP, ConvNeXt, BEiT and others).
 - **3 instance modes**: `images`, `objects` (cropping will be made automatically to every individual object), `both`.
 - **Visualize** your embeddings with `UMAP`, `PCA`, `t-SNE` or their combinations.
-- **Minimum recalculations**: The app detect changes in data and only recalculates the outdated embeddings (new images, updated annotations, etc).
+- **Minimum recalculations**: The app can detect changes in data and only recalculates the outdated embeddings (new images, updated annotations, etc).
 
 
 ## How to use:
