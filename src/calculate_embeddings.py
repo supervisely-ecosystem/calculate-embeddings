@@ -174,7 +174,7 @@ def calculate_embeddings_if_needed(
             img_batch = img_batch.astype(np.float32) / 255
             img_batch = normalize(img_batch, cfg["mean"], cfg["std"], np_dtype=np_dtype)
             img_batch = img_batch.transpose(0, 3, 1, 2)
-            inputs = format_input(torch.tensor(img_batch))
+            inputs = format_input(torch.tensor(img_batch, device=device))
             # 2. run infer
             features_batch = infer_utils.get_features(model, inputs, pool_mode="auto")
             features.append(features_batch.cpu().numpy())
