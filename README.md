@@ -15,6 +15,8 @@
 [![runs](https://app.supervise.ly/img/badges/runs/supervisely-ecosystem/embeddings-app)](https://supervise.ly)
 
 
+</div>
+
 # Overview
 
 **With this app you can explore your data: find out clusters of similar objects, outliers, or wrong labels of objects just by looking once at the chart.**
@@ -51,7 +53,7 @@
     - You can `click` on a point to `preview` an image and its annotation.
     - You can switch an `annotation mode`, showing only a selected object's annotation or the full image annotation.
     - Also try clicking on legends (bottom labels on the graph) to show/hide objects of a class.
-11. After you finish using the app, you should stop the app manually in the workspace tasks.
+11. After you finish using the app, you should stop the app manually in the workspace tasks from “three dots button” context menu, or by clicking `settings button -> stop`  right in application UI on the top of the page near the application name
 
 
 **Note:**
