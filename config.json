@@ -11,10 +11,15 @@
   "categories": [
     "neural network",
     "images",
+    "object detection",
+    "semantic segmentation",
+    "instance segmentation",
     "metric learning",
     "nn tools",
     "visualization",
-    "exploration"
+    "exploration",
+    "statistics",
+    "visualization stats"
   ],
   "context_menu": {
     "target": ["images_project", "images_dataset"],
