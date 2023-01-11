@@ -22,6 +22,6 @@
   "min_instance_version": "6.5.22",
   "release": { "version":"v0.1.9", "name":"beta" },
   "slug": "poldersen2/embeddings_app",
-  "need_gpu": true,
-  "community_agent": false
+  "need_gpu": false,
+  "community_agent": true
 }
