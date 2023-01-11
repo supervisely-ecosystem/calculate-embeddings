@@ -6,7 +6,7 @@
   "entrypoint": "python -m uvicorn src.main:app --host 0.0.0.0 --port 8000",
   "port": 8000,
   "icon": "https://user-images.githubusercontent.com/115161827/211832834-eef9325d-9e00-4499-ae42-2e7ee3d97f1a.png",
-  "icon_cover": true
+  "icon_cover": true,
   "poster": "https://user-images.githubusercontent.com/115161827/211832844-522b444d-4534-4b5e-bf12-14c7e7d3aeec.png",
   "categories": [
     "neural network",
