@@ -23,7 +23,7 @@
   ],
   "context_menu": {
     "target": ["images_project", "images_dataset"],
-    "context_category": "Metric Learning"
+    "context_category": "Report"
   },
   "min_instance_version": "6.5.22",
   "release": { "version":"v0.1.10", "name":"beta" },
