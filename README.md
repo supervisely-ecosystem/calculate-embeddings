@@ -59,3 +59,7 @@
 **Note:**
 The embeddings are calculated with large pre-trained models such as OpenAI CLIP, Facebook ConvNeXt.
 These models can retrieve very complex relationships in the data, so the data samples were arranged in space by some semantic meaning, not just by color and shape of the object.
+
+## Screenshot
+
+<img src="https://user-images.githubusercontent.com/115161827/211837311-03feb045-fc78-4061-98e2-57c5321d452f.png"/> 
