@@ -1,5 +1,21 @@
-Embeddings App
-==============
+<div align="center" markdown>
+<img src="https://user-images.githubusercontent.com/115161827/211832844-522b444d-4534-4b5e-bf12-14c7e7d3aeec.png"/>  
+
+# Explore data with embeddings
+
+<p align="center">
+  <a href="#Overview">Overview</a> •
+  <a href="#How-To-Run">How To Run</a> •
+</p>
+
+[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/embeddings-app)
+[![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervise.ly/slack)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/supervisely-ecosystem/embeddings-app)
+[![views](https://app.supervise.ly/img/badges/views/supervisely-ecosystem/embeddings-app)](https://supervise.ly)
+[![runs](https://app.supervise.ly/img/badges/runs/supervisely-ecosystem/embeddings-app)](https://supervise.ly)
+
+
+# Overview
 
 **With this app you can explore your data: find out clusters of similar objects, outliers, or wrong labels of objects just by looking once at the chart.**
 
@@ -11,7 +27,8 @@ Embeddings App
 - **Minimum recalculations**: The app can detect changes in data and only recalculates the outdated embeddings (new images, updated annotations, etc).
 
 
-## How to use:
+# How to Run
+
 1. Run the App either from context menu of a project or dataset, or from the Supervisely ecosystem. From the context menu select `"Run app" -> "Metric Learning" -> "Embeddings App"`.
 2. App will be deployed in a minute, then click `"OPEN"`.
 3. There you can select another project and dataset for which you want to calculate the embeddings.
@@ -34,6 +51,7 @@ Embeddings App
     - You can `click` on a point to `preview` an image and its annotation.
     - You can switch an `annotation mode`, showing only a selected object's annotation or the full image annotation.
     - Also try clicking on legends (bottom labels on the graph) to show/hide objects of a class.
+11. After you finish using the app, you should stop the app manually in the workspace tasks.
 
 
 **Note:**
