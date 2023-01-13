@@ -32,7 +32,7 @@ from . import calculate_embeddings
 
 
 def update_globals(new_dataset_ids):
-    global dataset_ids, project_id, workspace_id, team_id, project_info, project_meta
+    global dataset_ids, project_id, workspace_id, team_id, project_info, project_meta, is_marked, tag_meta
     dataset_ids = new_dataset_ids
     if dataset_ids:
         project_id = api.dataset.get_info_by_id(dataset_ids[0]).project_id
@@ -50,10 +50,15 @@ def update_globals(new_dataset_ids):
         print("All globals set to None")
         dataset_ids = []
         project_id, workspace_id, team_id, project_info, project_meta = [None] * 5
+    if dataset_ids or project_id:
+        is_marked = False
+        tag_meta = project_meta.get_tag_meta(tag_name)
+        print("tag_meta is exists:", bool(tag_meta))
 
 
 ### Globals init
 available_projection_methods = ["UMAP", "PCA", "t-SNE", "PCA-UMAP", "PCA-t-SNE"]
+tag_name = "MARKED"
 
 load_dotenv("local.env")
 load_dotenv(os.path.expanduser("~/supervisely.env"))
@@ -136,6 +141,7 @@ content = Container([select_instance_mode_f, input_expand_wh_f])
 card_preprocessing_settings = Card(title="Preprocessing settings", content=content, collapsable=True)
 card_preprocessing_settings.collapse()
 
+
 ### Visualizer settings
 select_projection_method = SelectString(available_projection_methods)
 select_projection_method_f = Field(
@@ -171,7 +177,8 @@ text = Text("no object selected")
 show_all_anns = False
 cur_info = None
 btn_toggle = Button(f"Show all annotations: {show_all_anns}", "default", button_size="small")
-card_preview = Card(title="Object preview", content=Container(widgets=[labeled_image, text, btn_toggle]))
+btn_mark = Button(f"Assign tag 'MARKED'", button_size="small")
+card_preview = Card(title="Object preview", content=Container(widgets=[labeled_image, text, btn_toggle, btn_mark]))
 card_embeddings_chart = Container(widgets=[card_chart, card_preview], direction="horizontal", fractions=[3, 1])
 card_embeddings_chart.hide()
 
@@ -201,11 +208,43 @@ def toggle_ann():
 
 @chart.click
 def on_click(datapoint: ScatterChart.ClickedDataPoint):
-    global global_idxs_mapping, all_info_list, project_meta
+    global global_idxs_mapping, all_info_list, project_meta, is_marked, tag_meta
     idx = global_idxs_mapping[datapoint.series_name][datapoint.data_index]
     info = all_info_list[idx]
     print(datapoint.data_index, idx, info["image_id"], info["object_cls"], show_all_anns)
+    if tag_meta is not None:
+        tag = read_tag(info["image_id"], info["object_id"])
+        is_marked = bool(tag)
+        update_marked()
     show_image(info, project_meta)
+    if btn_mark.is_hidden():
+        btn_mark.show()
+
+
+def update_marked():
+    global is_marked
+    if is_marked:
+        btn_mark.text = "Remove tag 'MARKED'"
+    else:
+        btn_mark.text = "Assign tag 'MARKED'"
+
+
+@btn_mark.click
+def on_mark():
+    global project_info, project_meta, tag_meta, cur_info, is_marked
+    if tag_meta is None:
+        print("first marking, creating tag_meta")
+        tag_meta = sly.TagMeta(tag_name, sly.TagValueType.NONE)
+        project_meta, tag_meta = get_or_create_tag_meta(project_id, tag_meta)
+        is_marked = False
+    img_id, obj_id = cur_info["image_id"], cur_info["object_id"]
+    if is_marked:
+        resp = remove_tag(img_id, obj_id)
+    else:
+        resp = add_tag(img_id, obj_id)
+    tag = read_tag(img_id, obj_id)
+    is_marked = bool(tag)
+    update_marked()
 
 
 def show_image(info, project_meta):
@@ -229,6 +268,7 @@ def show_image(info, project_meta):
 def on_dataset_selected(new_dataset_ids):
     update_globals(new_dataset_ids)
     update_table()
+    update_marked()
 
 
 def update_table():
@@ -242,6 +282,7 @@ def run():
     global model_name, global_idxs_mapping, all_info_list  # , project_meta, dataset_ids, project_id, workspace_id, team_id
     info_run.description = ""
     card_embeddings_chart.hide()
+    btn_mark.hide()
 
     if not dataset_ids:
         info_run.description += "Dataset is not selected"
@@ -334,3 +375,89 @@ def run():
     card_embeddings_chart.show()
     update_table()
     info_run.description += "done!<br>"
+
+
+def get_or_create_tag_meta(project_id, tag_meta):
+    # params: project_id
+    # updates: global project_meta, tag_meta
+    project_meta_json = api.project.get_meta(id=project_id)
+    project_meta = sly.ProjectMeta.from_json(data=project_meta_json)
+    tag_names = [tag_meta.name for tag_meta in project_meta.tag_metas]
+    if tag_meta.name not in tag_names:
+        project_meta = project_meta.add_tag_meta(new_tag_meta=tag_meta)
+        api.project.update_meta(id=project_id, meta=project_meta)
+    tag_meta = get_tag_meta(project_id, name=tag_meta.name)  # we need to re-assign tag_meta
+    return project_meta, tag_meta
+
+
+def get_tag_meta(project_id, name) -> sly.TagMeta:
+    project_meta = api.project.get_meta(project_id)
+    project_meta = sly.ProjectMeta.from_json(project_meta)
+    return project_meta.get_tag_meta(name)
+
+
+def read_img_tag(image_id, tag_meta):
+    image_info = api.image.get_info_by_id(image_id)
+    tags = [tag for tag in image_info.tags if tag["tagId"] == tag_meta.sly_id]
+    if len(tags) == 1:
+        return tags[0]
+
+
+def read_label_tag(object_id, tag_meta):
+    tags = api.advanced.get_object_tags(object_id)
+    tags_filtered = [tag for tag in tags if tag["tagId"] == tag_meta.sly_id]
+    if len(tags_filtered) == 1:
+        return tags_filtered[0]
+
+
+def read_tag(image_id, object_id):
+    if object_id is None:
+        # it is an image
+        return read_img_tag(image_id, tag_meta)
+    else:
+        # it is an object
+        return read_label_tag(object_id, tag_meta)
+
+
+def add_img_tag(image_id, tag_meta, value=None):
+    return api.image.add_tag(image_id=image_id, tag_id=tag_meta.sly_id, value=value)
+
+
+def add_label_tag(object_id, tag_meta, value=None):
+    return api.advanced.add_tag_to_object(tag_meta_id=tag_meta.sly_id, figure_id=object_id, value=value)
+
+
+def add_tag(image_id, object_id):
+    if object_id is None:
+        # it is an image
+        return add_img_tag(image_id, tag_meta)
+    else:
+        # it is an object
+        return add_label_tag(object_id, tag_meta)
+
+
+def remove_img_tag(image_id, tag_meta):
+    tag = read_img_tag(image_id, tag_meta)
+    if tag:
+        tag_id = tag["id"]
+        return api.advanced.remove_tag_from_image(tag_meta_id=tag_meta.sly_id, image_id=image_id, tag_id=tag_id)
+    else:
+        return False
+
+
+def remove_label_tag(object_id, tag_meta):
+    tag = read_label_tag(object_id, tag_meta)
+    if tag:
+        tag_id = tag["id"]
+        return api.advanced.remove_tag_from_object(tag_meta_id=tag_meta.sly_id, figure_id=object_id, tag_id=tag_id)
+    else:
+        return False
+
+
+def remove_tag(image_id, object_id):
+    if object_id is None:
+        # it is an image
+        return remove_img_tag(image_id, tag_meta)
+    else:
+        # it is an object
+        return remove_label_tag(object_id, tag_meta)
