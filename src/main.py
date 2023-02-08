@@ -211,7 +211,6 @@ def on_click(datapoint: ScatterChart.ClickedDataPoint):
     global global_idxs_mapping, all_info_list, project_meta, is_marked, tag_meta
     idx = global_idxs_mapping[datapoint.series_name][datapoint.data_index]
     info = all_info_list[idx]
-    print(datapoint.data_index, idx, info["image_id"], info["object_cls"], show_all_anns)
     if tag_meta is not None:
         tag = read_tag(info["image_id"], info["object_id"])
         is_marked = bool(tag)
