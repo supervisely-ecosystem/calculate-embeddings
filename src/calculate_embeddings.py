@@ -68,19 +68,19 @@ def extract_crops(
         result_yxyx.append([0, 0, img_np.shape[0], img_np.shape[1]])
         result_obj_cls.append(None)
     if instance_mode in ["objects", "both"]:
-        yxyx_croods = []
+        yxyx_coords = []
         for label in labels:
             if not isinstance(label.geometry, accepted_geometry):
                 continue
             if label.geometry.area < 9:
                 continue
             rect = label.geometry.to_bbox()
-            yxyx_croods.append([rect.top, rect.left, rect.bottom, rect.right])
+            yxyx_coords.append([rect.top, rect.left, rect.bottom, rect.right])
             result_obj_cls.append(label.obj_class.name)
             result_labels.append(label)
-        crops = get_crops(img_np, yxyx_croods, hw_expand=hw_expand)
+        crops = get_crops(img_np, yxyx_coords, hw_expand=hw_expand)
         crops = [cv2.resize(crop, input_size_hw[::-1], interpolation=resize_interpolation) for crop in crops]
-        result_yxyx += yxyx_croods
+        result_yxyx += yxyx_coords
         result_crops += crops
     assert len(result_crops) == len(result_obj_cls) == len(result_yxyx)
     return result_crops, result_obj_cls, result_yxyx, result_labels
@@ -119,7 +119,7 @@ def calculate_embeddings_if_needed(
     progress_widget=None,
     info_widget=None,
 ):
-    """Calculate embbeddings trying to recalculate only changed images"""
+    """Calculate embeddings trying to recalculate only changed images"""
     batch_size_api = 50
     np_dtype = np.float32
 
@@ -139,7 +139,7 @@ def calculate_embeddings_if_needed(
 
     def init_model(model_name, device):
         if info_widget is not None:
-            info_widget.description += f'downloading the model "{model_name}", it may take a minutes...<br>'
+            info_widget.description += f'downloading the model "{model_name}". This may take some time...<br>'
         print(f"Running model on {device}")
         model, cfg, format_input = infer_utils.create_model(model_name)
         model.to(device)
@@ -148,7 +148,7 @@ def calculate_embeddings_if_needed(
         cfg["expand_hw"] = expand_hw
         cfg["instance_mode"] = instance_mode
         if info_widget is not None:
-            info_widget.description += f'Infering dataset on "{device}"...<br>'
+            info_widget.description += f'Inferring dataset on "{device}"...<br>'
         return model, cfg, format_input, input_size_hw, resize_interpolation
 
     def infer_one(image, labels, instance_mode):
@@ -214,7 +214,7 @@ def calculate_embeddings_if_needed(
         # Infer and collect info
         if progress_widget and len(to_infer_img_ids):
             progress_bar = progress_widget(
-                message=f"Infering dataset {dataset.name}...",
+                message=f"Inferring dataset {dataset.name}...",
                 total=len(to_infer_img_ids),
             )
         for image_ids in sly.batched(to_infer_img_ids, batch_size=batch_size_api):
