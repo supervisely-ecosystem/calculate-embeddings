@@ -135,7 +135,7 @@ input_expand_wh = InputNumber(0, -10000, 10000)
 input_expand_wh_f = Field(
     input_expand_wh,
     "Expand crops (px)",
-    "Expand rectangles of the cropped objects by a few pixels on both XY sides. Used to give the model a little context on the boundary of the objects.",
+    "Expand rectangles of the cropped objects by a few pixels on both XY sides. Use it to give the model a little context on the boundary of objects.",
 )
 content = Container([select_instance_mode_f, input_expand_wh_f])
 card_preprocessing_settings = Card(title="Preprocessing settings", content=content, collapsable=True)
@@ -353,7 +353,9 @@ def run():
         try:
             projections = run_utils.calculate_projections(embeddings, all_info_list, projection_method, metric=metric)
         except RuntimeError:
-            info_run.description += f"the count of embeddings is {len(embeddings)}, it may too small to project with UMAP, trying PCA...<br>"
+            info_run.description += (
+                f"the count of embeddings is {len(embeddings)}, it is too small to project with UMAP, trying PCA...<br>"
+            )
             projection_method = "PCA"
             projections = run_utils.calculate_projections(embeddings, all_info_list, projection_method, metric=metric)
         print("uploading projections to team_files...")
