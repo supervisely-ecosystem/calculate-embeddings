@@ -62,4 +62,4 @@ These models can retrieve very complex relationships in the data, so the data sa
 
 ## Screenshot
 
-<img src="https://user-images.githubusercontent.com/115161827/211837311-03feb045-fc78-4061-98e2-57c5321d452f.png"/> 
+<img src="https://user-images.githubusercontent.com/115161827/217641449-62b677ff-2345-4bbb-b5be-3369cd131a9c.png"/> 
