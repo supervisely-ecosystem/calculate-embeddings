@@ -1,4 +1,4 @@
-supervisely==6.68.45
+supervisely==6.69.15
 opencv-python==4.6.0.66
 transformers
 timm
