@@ -1,0 +1,6 @@
+supervisely
+transformers
+timm
+torch
+scikit-learn
+umap-learn
