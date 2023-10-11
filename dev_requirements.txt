@@ -1,6 +1,11 @@
-supervisely
-transformers
-timm
-torch
-scikit-learn
-umap-learn
+--extra-index-url https://download.pytorch.org/whl/cu113
+
+open-clip-torch==2.16.0
+Pillow==9.2.0
+torch==1.11.0+cu113
+torchvision==0.12.0+cu113 
+supervisely==6.72.134
+transformers==4.33.2
+timm==0.9.5
+scikit-learn==1.3.1
+umap-learn==0.5.4
