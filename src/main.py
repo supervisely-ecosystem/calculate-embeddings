@@ -1,9 +1,11 @@
 import os
 import json
-from collections import defaultdict
 import numpy as np
+import open_clip
+from collections import defaultdict
 
 import supervisely as sly
+from supervisely import is_production
 from supervisely.app.content import StateJson, DataJson
 from dotenv import load_dotenv
 import torch
@@ -27,52 +29,19 @@ from supervisely.app.widgets import (
     NotificationBox,
 )
 
-from . import run_utils
-from . import calculate_embeddings
-
-
-def update_globals(new_dataset_ids):
-    global dataset_ids, project_id, workspace_id, team_id, project_info, project_meta, is_marked, tag_meta
-    dataset_ids = new_dataset_ids
-    if dataset_ids:
-        project_id = api.dataset.get_info_by_id(dataset_ids[0]).project_id
-        workspace_id = api.project.get_info_by_id(project_id).workspace_id
-        team_id = api.workspace.get_info_by_id(workspace_id).team_id
-        project_info = api.project.get_info_by_id(project_id)
-        project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
-        print(f"Project is {project_info.name}, {dataset_ids}")
-    elif project_id:
-        workspace_id = api.project.get_info_by_id(project_id).workspace_id
-        team_id = api.workspace.get_info_by_id(workspace_id).team_id
-        project_info = api.project.get_info_by_id(project_id)
-        project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
-    else:
-        print("All globals set to None")
-        dataset_ids = []
-        project_id, workspace_id, team_id, project_info, project_meta = [None] * 5
-    if dataset_ids or project_id:
-        is_marked = False
-        tag_meta = project_meta.get_tag_meta(tag_name)
-        print("tag_meta is exists:", bool(tag_meta))
+from src import run_utils
+from src import calculate_embeddings
+from src.globals import params, update_globals
+from src.clip_api import load_progress
 
 
 ### Globals init
 available_projection_methods = ["UMAP", "PCA", "t-SNE", "PCA-UMAP", "PCA-t-SNE"]
 tag_name = "MARKED"
 
-load_dotenv("local.env")
-load_dotenv(os.path.expanduser("~/supervisely.env"))
-api = sly.Api()
-
-# if app had started from context menu, one of this has to be set:
-project_id = sly.env.project_id(raise_not_found=False)
-dataset_id = sly.env.dataset_id(raise_not_found=False)
-dataset_ids = [dataset_id] if dataset_id else []
-update_globals(dataset_ids)
-
 
 ### Dataset selection
-dataset_selector = SelectDataset(project_id=project_id, multiselect=True)
+dataset_selector = SelectDataset(project_id=params.project_id, multiselect=True)
 card_project_settings = Card(title="Dataset selection", content=dataset_selector)
 
 ### Model selection
@@ -89,8 +58,9 @@ model_items = [
     ["beitv2_large_patch16_224_in22k", "1310 MB", "Transformer"],
     # ["maxvit_large_tf_384.in21k_ft_in1k", "849 MB", "ConvNet+Transformer"],  # now it is at pre-release in timm lib
 ]
-files_list = api.file.list(team_id, "/embeddings")
-rows = run_utils.get_rows(files_list, model_items, project_info)
+
+files_list = params.api.file.list(params.team_id, "/embeddings")
+rows = run_utils.get_rows(files_list, model_items, params.project_info)
 column_names = ["Name", "Model size", "Architecture type", "Already calculated"]
 table_model_select = RadioTable(column_names, rows)
 table_model_select_f = Field(table_model_select, "Click on the table to select a model:")
@@ -161,7 +131,7 @@ btn_run = Button("Run")
 check_force_recalculate = Checkbox("Force recalculate")
 progress = Progress()
 info_run = NotificationBox()
-content = Container([btn_run, check_force_recalculate, progress, info_run])
+content = Container([btn_run, check_force_recalculate, progress, load_progress, info_run])
 card_run = Card(title="Run", content=content)
 
 
@@ -199,30 +169,30 @@ app = sly.Application(
 
 @btn_toggle.click
 def toggle_ann():
-    global show_all_anns
+    global show_all_anns, params
     show_all_anns = not show_all_anns
     btn_toggle.text = f"Show all annotations: {show_all_anns}"
     if cur_info:
-        show_image(cur_info, project_meta)
+        show_image(cur_info, params.project_meta)
 
 
 @chart.click
 def on_click(datapoint: ScatterChart.ClickedDataPoint):
-    global global_idxs_mapping, all_info_list, project_meta, is_marked, tag_meta
+    global global_idxs_mapping, all_info_list, params
     idx = global_idxs_mapping[datapoint.series_name][datapoint.data_index]
     info = all_info_list[idx]
-    if tag_meta is not None:
+    if params.tag_meta is not None:
         tag = read_tag(info["image_id"], info["object_id"])
-        is_marked = bool(tag)
+        params.is_marked = bool(tag)
         update_marked()
-    show_image(info, project_meta)
+    show_image(info, params.project_meta)
     if btn_mark.is_hidden():
         btn_mark.show()
 
 
 def update_marked():
-    global is_marked
-    if is_marked:
+    global params
+    if params.is_marked:
         btn_mark.text = "Remove tag 'MARKED'"
     else:
         btn_mark.text = "Assign tag 'MARKED'"
@@ -230,19 +200,19 @@ def update_marked():
 
 @btn_mark.click
 def on_mark():
-    global project_info, project_meta, tag_meta, cur_info, is_marked
-    if tag_meta is None:
+    global params, cur_info
+    if params.tag_meta is None:
         print("first marking, creating tag_meta")
-        tag_meta = sly.TagMeta(tag_name, sly.TagValueType.NONE)
-        project_meta, tag_meta = get_or_create_tag_meta(project_id, tag_meta)
-        is_marked = False
+        params.tag_meta = sly.TagMeta(tag_name, sly.TagValueType.NONE)
+        params.project_meta, params.tag_meta = get_or_create_tag_meta(params.project_id, params.tag_meta)
+        params.is_marked = False
     img_id, obj_id = cur_info["image_id"], cur_info["object_id"]
-    if is_marked:
+    if params.is_marked:
         resp = remove_tag(img_id, obj_id)
     else:
         resp = add_tag(img_id, obj_id)
     tag = read_tag(img_id, obj_id)
-    is_marked = bool(tag)
+    params.is_marked = bool(tag)
     update_marked()
 
 
@@ -252,8 +222,8 @@ def show_image(info, project_meta):
     image_id, obj_cls, obj_id = info["image_id"], info["object_cls"], info["object_id"]
     labeled_image.loading = True
 
-    image = api.image.get_info_by_id(image_id)
-    ann_json = api.annotation.download_json(image_id)
+    image = params.api.image.get_info_by_id(image_id)
+    ann_json = params.api.annotation.download_json(image_id)
     if not show_all_anns:
         ann_json["objects"] = [obj for obj in ann_json["objects"] if obj["id"] == obj_id]
     ann = sly.Annotation.from_json(ann_json, project_meta) if len(ann_json["objects"]) else None
@@ -265,30 +235,30 @@ def show_image(info, project_meta):
 
 @dataset_selector.value_changed
 def on_dataset_selected(new_dataset_ids):
-    update_globals(new_dataset_ids)
+    update_globals(new_dataset_ids, params)
     update_table()
     update_marked()
 
 
 def update_table():
-    files_list = api.file.list(team_id, "/embeddings")
-    rows = run_utils.get_rows(files_list, model_items, project_info)
+    files_list = params.api.file.list(params.team_id, "/embeddings")
+    rows = run_utils.get_rows(files_list, model_items, params.project_info)
     table_model_select.rows = rows
 
 
 @btn_run.click
 def run():
-    global model_name, global_idxs_mapping, all_info_list  # , project_meta, dataset_ids, project_id, workspace_id, team_id
+    global params, model_name, global_idxs_mapping, all_info_list  # , project_meta, dataset_ids, project_id, workspace_id, team_id
     info_run.description = ""
     card_embeddings_chart.hide()
     btn_mark.hide()
 
-    if not dataset_ids:
+    if not params.dataset_ids:
         info_run.description += "Dataset is not selected"
         return
 
     # 1. Read fields
-    datasets = [api.dataset.get_info_by_id(i) for i in dataset_ids]
+    datasets = [params.api.dataset.get_info_by_id(i) for i in params.dataset_ids]
     if input_select_model.get_value():
         model_name = input_select_model.get_value()
     else:
@@ -300,19 +270,19 @@ def run():
     device = str(select_device.get_value())
     batch_size = int(input_batch_size.value)
     force_recalculate = bool(check_force_recalculate.is_checked())
-    path_prefix, save_paths = run_utils.get_save_paths(model_name, project_info, projection_method, metric)
+    path_prefix, save_paths = run_utils.get_save_paths(model_name, params.project_info, projection_method, metric)
 
     # 2. Load embeddings if exist
-    if api.file.exists(team_id, "/" + save_paths["info"]) and not force_recalculate:
+    if params.api.file.exists(params.team_id, "/" + save_paths["info"]) and not force_recalculate:
         info_run.description += "found existing embeddings<br>"
-        embeddings, all_info, cfg = run_utils.download_embeddings(api, path_prefix, save_paths, team_id)
+        embeddings, all_info, cfg = run_utils.download_embeddings(params.api, path_prefix, save_paths, params.team_id)
         print("embeddings downloaded. n =", len(embeddings))
     else:
         embeddings, all_info, cfg = None, None, None
 
     # 3. Calculate or update embeddings
     out = calculate_embeddings.calculate_embeddings_if_needed(
-        api,
+        params.api,
         model_name,
         datasets,
         device,
@@ -322,7 +292,7 @@ def run():
         cfg,
         instance_mode,
         expand_hw,
-        project_meta,
+        params.project_meta,
         progress,
         info_run,
     )
@@ -334,14 +304,14 @@ def run():
     is_updated = is_updated or force_recalculate
     if is_updated:
         print("uploading embeddings to team_files...")
-        run_utils.upload_embeddings(embeddings, all_info, cfg, api, path_prefix, save_paths, team_id)
+        run_utils.upload_embeddings(embeddings, all_info, cfg, params.api, path_prefix, save_paths, params.team_id)
 
     # 5. Calculate projections or load from team_files
     all_info_list = [dict(tuple(zip(all_info.keys(), vals))) for vals in zip(*list(all_info.values()))]
-    if api.file.exists(team_id, "/" + save_paths["projections"]) and not is_updated:
+    if params.api.file.exists(params.team_id, "/" + save_paths["projections"]) and not is_updated:
         info_run.description += "found existing projections<br>"
         print("downloading projections...")
-        api.file.download(team_id, "/" + save_paths["projections"], save_paths["projections"])
+        params.api.file.download(params.team_id, "/" + save_paths["projections"], save_paths["projections"])
         projections = torch.load(save_paths["projections"])
     else:
         info_run.description += "calculating projections...<br>"
@@ -359,8 +329,8 @@ def run():
             projections = run_utils.calculate_projections(embeddings, all_info_list, projection_method, metric=metric)
         print("uploading projections to team_files...")
         torch.save(projections, save_paths["projections"])
-        api.file.upload(team_id, save_paths["projections"], save_paths["projections"])
-    file_id = str(api.file.get_info_by_path(team_id, "/" + save_paths["embeddings"]).id)
+        params.api.file.upload(params.team_id, save_paths["projections"], save_paths["projections"])
+    file_id = str(params.api.file.get_info_by_path(params.team_id, "/" + save_paths["embeddings"]).id)
     server_address = os.environ.get("SERVER_ADDRESS")
     if server_address:
         url = f"{server_address}/files/{file_id}"
@@ -369,8 +339,8 @@ def run():
     # 6. Show chart
     obj_classes = list(set(all_info["object_cls"]))
     print(f"n_classes = {len(obj_classes)}")
-    series, colors, global_idxs_mapping = run_utils.make_series(projections, all_info_list, project_meta)
-    chart.set_title(f"{model_name} {project_info.name} {projection_method} embeddings", send_changes=False)
+    series, colors, global_idxs_mapping = run_utils.make_series(projections, all_info_list, params.project_meta)
+    chart.set_title(f"{model_name} {params.project_info.name} {projection_method} embeddings", send_changes=False)
     chart.set_colors(colors, send_changes=False)
     chart.set_series(series, send_changes=True)
     card_embeddings_chart.show()
@@ -378,87 +348,90 @@ def run():
     info_run.description += "done!<br>"
 
 
-def get_or_create_tag_meta(project_id, tag_meta):
+def get_or_create_tag_meta(project_id, tag_meta: sly.TagMeta):
     # params: project_id
     # updates: global project_meta, tag_meta
-    project_meta_json = api.project.get_meta(id=project_id)
+    project_meta_json = params.api.project.get_meta(id=project_id)
     project_meta = sly.ProjectMeta.from_json(data=project_meta_json)
     tag_names = [tag_meta.name for tag_meta in project_meta.tag_metas]
     if tag_meta.name not in tag_names:
         project_meta = project_meta.add_tag_meta(new_tag_meta=tag_meta)
-        api.project.update_meta(id=project_id, meta=project_meta)
+        params.api.project.update_meta(id=project_id, meta=project_meta)
     tag_meta = get_tag_meta(project_id, name=tag_meta.name)  # we need to re-assign tag_meta
     return project_meta, tag_meta
 
 
 def get_tag_meta(project_id, name) -> sly.TagMeta:
-    project_meta = api.project.get_meta(project_id)
+    project_meta = params.api.project.get_meta(project_id)
     project_meta = sly.ProjectMeta.from_json(project_meta)
     return project_meta.get_tag_meta(name)
 
 
 def read_img_tag(image_id, tag_meta):
-    image_info = api.image.get_info_by_id(image_id)
+    image_info = params.api.image.get_info_by_id(image_id)
     tags = [tag for tag in image_info.tags if tag["tagId"] == tag_meta.sly_id]
     if len(tags) == 1:
         return tags[0]
 
 
 def read_label_tag(object_id, tag_meta):
-    tags = api.advanced.get_object_tags(object_id)
+    tags = params.api.advanced.get_object_tags(object_id)
     tags_filtered = [tag for tag in tags if tag["tagId"] == tag_meta.sly_id]
     if len(tags_filtered) == 1:
         return tags_filtered[0]
 
 
 def read_tag(image_id, object_id):
+    global params
     if object_id is None:
         # it is an image
-        return read_img_tag(image_id, tag_meta)
+        return read_img_tag(image_id, params.tag_meta)
     else:
         # it is an object
-        return read_label_tag(object_id, tag_meta)
+        return read_label_tag(object_id, params.tag_meta)
 
 
-def add_img_tag(image_id, tag_meta, value=None):
-    return api.image.add_tag(image_id=image_id, tag_id=tag_meta.sly_id, value=value)
+def add_img_tag(image_id, tag_meta: sly.TagMeta, value=None):
+    return params.api.image.add_tag(image_id=image_id, tag_id=tag_meta.sly_id, value=value)
 
 
-def add_label_tag(object_id, tag_meta, value=None):
-    return api.advanced.add_tag_to_object(tag_meta_id=tag_meta.sly_id, figure_id=object_id, value=value)
+def add_label_tag(object_id, tag_meta: sly.TagMeta, value=None):
+    return params.api.advanced.add_tag_to_object(tag_meta_id=tag_meta.sly_id, figure_id=object_id, value=value)
 
 
 def add_tag(image_id, object_id):
+    global params
     if object_id is None:
         # it is an image
-        return add_img_tag(image_id, tag_meta)
+        return add_img_tag(image_id, params.tag_meta)
     else:
         # it is an object
-        return add_label_tag(object_id, tag_meta)
+        return add_label_tag(object_id, params.tag_meta)
 
 
 def remove_img_tag(image_id, tag_meta):
     tag = read_img_tag(image_id, tag_meta)
     if tag:
         tag_id = tag["id"]
-        return api.advanced.remove_tag_from_image(tag_meta_id=tag_meta.sly_id, image_id=image_id, tag_id=tag_id)
+        return params.api.advanced.remove_tag_from_image(tag_meta_id=tag_meta.sly_id, image_id=image_id, tag_id=tag_id)
     else:
         return False
 
 
-def remove_label_tag(object_id, tag_meta):
+def remove_label_tag(object_id, tag_meta: sly.TagMeta):
     tag = read_label_tag(object_id, tag_meta)
     if tag:
         tag_id = tag["id"]
-        return api.advanced.remove_tag_from_object(tag_meta_id=tag_meta.sly_id, figure_id=object_id, tag_id=tag_id)
+        return params.api.advanced.remove_tag_from_object(tag_meta_id=tag_meta.sly_id, figure_id=object_id, tag_id=tag_id)
     else:
         return False
 
 
 def remove_tag(image_id, object_id):
+    global params
     if object_id is None:
         # it is an image
-        return remove_img_tag(image_id, tag_meta)
+        return remove_img_tag(image_id, params.tag_meta)
     else:
         # it is an object
-        return remove_label_tag(object_id, tag_meta)
+        return remove_label_tag(object_id, params.tag_meta)
