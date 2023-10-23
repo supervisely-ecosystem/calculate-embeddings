@@ -116,6 +116,7 @@ def calculate_embeddings_if_needed(
     instance_mode,
     expand_hw,
     project_meta,
+    clip_model_info: dict =None,
     progress_widget=None,
     info_widget=None,
 ):
@@ -141,7 +142,7 @@ def calculate_embeddings_if_needed(
         if info_widget is not None:
             info_widget.description += f'downloading the model "{model_name}". This may take some time...<br>'
         print(f"Running model on {device}")
-        model, cfg, format_input = infer_utils.create_model(model_name)
+        model, cfg, format_input = infer_utils.create_model(model_name, device)
         model.to(device)
         input_size_hw = cfg["input_size"]
         resize_interpolation = cfg["interpolation"]
@@ -171,9 +172,6 @@ def calculate_embeddings_if_needed(
         # infer model
         for img_batch in crops_batched:
             # 1. prepare input
-            img_batch = img_batch.astype(np.float32) / 255
-            img_batch = normalize(img_batch, cfg["mean"], cfg["std"], np_dtype=np_dtype)
-            img_batch = img_batch.transpose(0, 3, 1, 2)
             inputs = format_input(torch.tensor(img_batch, device=device))
             # 2. run infer
             features_batch = infer_utils.get_features(model, inputs, pool_mode="auto")
