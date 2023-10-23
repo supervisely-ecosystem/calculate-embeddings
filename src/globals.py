@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional
 from dotenv import load_dotenv
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import supervisely as sly
 
@@ -9,7 +9,7 @@ import supervisely as sly
 @dataclass
 class GlobalParams:
     api: sly.Api
-    dataset_ids: List[int] = []
+    dataset_ids: List[int] = field(default_factory=list)
     project_id: Optional[int] = None
     workspace_id: Optional[int] = None
     team_id: Optional[int] = None
@@ -17,6 +17,9 @@ class GlobalParams:
     project_meta: Optional[sly.ProjectMeta] = None
     is_marked: bool = False
     tag_meta: Optional[sly.TagMeta] = None
+
+
+tag_name = "MARKED"
 
 
 def update_globals(new_dataset_ids: List[int], params: GlobalParams):

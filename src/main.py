@@ -31,13 +31,13 @@ from supervisely.app.widgets import (
 
 from src import run_utils
 from src import calculate_embeddings
-from src.globals import params, update_globals
+from src.globals import params, update_globals, tag_name
 from src.clip_api import load_progress
+from src.model_table import table_model_select_f, update_table, get_selected_model
 
 
 ### Globals init
 available_projection_methods = ["UMAP", "PCA", "t-SNE", "PCA-UMAP", "PCA-t-SNE"]
-tag_name = "MARKED"
 
 
 ### Dataset selection
@@ -45,29 +45,29 @@ dataset_selector = SelectDataset(project_id=params.project_id, multiselect=True)
 card_project_settings = Card(title="Dataset selection", content=dataset_selector)
 
 ### Model selection
-model_items = [
-    ["facebook/convnext-tiny-224", "114 MB", "ConvNet"],
-    ["facebook/convnext-large-384", "791 MB", "ConvNet"],
-    ["facebook/convnext-xlarge-224-22k", "1570 MB", "ConvNet"],
-    ["openai/clip-vit-base-patch32", "605 MB", "Transformer"],
-    ["openai/clip-vit-large-patch14", "1710 MB", "Transformer"],
-    ["facebook/flava-full", "1430 MB", "Transformer"],
-    ["microsoft/beit-large-patch16-224-pt22k", "1250 MB", "Transformer"],
-    ["microsoft/beit-large-patch16-384", "1280 MB", "Transformer"],
-    ["beitv2_large_patch16_224", "1310 MB", "Transformer"],
-    ["beitv2_large_patch16_224_in22k", "1310 MB", "Transformer"],
-    # ["maxvit_large_tf_384.in21k_ft_in1k", "849 MB", "ConvNet+Transformer"],  # now it is at pre-release in timm lib
-]
+# model_items = [
+#     ["facebook/convnext-tiny-224", "114 MB", "ConvNet"],
+#     ["facebook/convnext-large-384", "791 MB", "ConvNet"],
+#     ["facebook/convnext-xlarge-224-22k", "1570 MB", "ConvNet"],
+#     ["openai/clip-vit-base-patch32", "605 MB", "Transformer"],
+#     ["openai/clip-vit-large-patch14", "1710 MB", "Transformer"],
+#     ["facebook/flava-full", "1430 MB", "Transformer"],
+#     ["microsoft/beit-large-patch16-224-pt22k", "1250 MB", "Transformer"],
+#     ["microsoft/beit-large-patch16-384", "1280 MB", "Transformer"],
+#     ["beitv2_large_patch16_224", "1310 MB", "Transformer"],
+#     ["beitv2_large_patch16_224_in22k", "1310 MB", "Transformer"],
+#     # ["maxvit_large_tf_384.in21k_ft_in1k", "849 MB", "ConvNet+Transformer"],  # now it is at pre-release in timm lib
+# ]
 
-files_list = params.api.file.list(params.team_id, "/embeddings")
-rows = run_utils.get_rows(files_list, model_items, params.project_info)
-column_names = ["Name", "Model size", "Architecture type", "Already calculated"]
-table_model_select = RadioTable(column_names, rows)
-table_model_select_f = Field(table_model_select, "Click on the table to select a model:")
-input_select_model = Input("", placeholder="timm/vit_base_patch16_clip_224.openai")
-desc_select_model = Text(
-    "...or you can type a model_name from <a href='https://huggingface.co/models?sort=downloads&search=timm%2F'>timm</a>",
-)
+# files_list = params.api.file.list(params.team_id, "/embeddings")
+# rows = run_utils.get_rows(files_list, model_items, params.project_info)
+# column_names = ["Name", "Model size", "Architecture type", "Already calculated"]
+# table_model_select = RadioTable(column_names, rows)
+# table_model_select_f = Field(table_model_select, "Click on the table to select a model:")
+# input_select_model = Input("", placeholder="timm/vit_base_patch16_clip_224.openai")
+# desc_select_model = Text(
+#     "...or you can type a model_name from <a href='https://huggingface.co/models?sort=downloads&search=timm%2F'>timm</a>",
+# )
 device_names, torch_devices = run_utils.get_devices()
 select_device = Select([Select.Item(v, l) for v, l in zip(torch_devices, device_names)])
 select_device_f = Field(select_device, "Device")
@@ -79,8 +79,8 @@ input_batch_size_f = Field(
 content = Container(
     [
         table_model_select_f,
-        desc_select_model,
-        input_select_model,
+        # desc_select_model,
+        # input_select_model,
         select_device_f,
         input_batch_size_f,
     ]
@@ -240,12 +240,6 @@ def on_dataset_selected(new_dataset_ids):
     update_marked()
 
 
-def update_table():
-    files_list = params.api.file.list(params.team_id, "/embeddings")
-    rows = run_utils.get_rows(files_list, model_items, params.project_info)
-    table_model_select.rows = rows
-
-
 @btn_run.click
 def run():
     global params, model_name, global_idxs_mapping, all_info_list  # , project_meta, dataset_ids, project_id, workspace_id, team_id
@@ -259,10 +253,8 @@ def run():
 
     # 1. Read fields
     datasets = [params.api.dataset.get_info_by_id(i) for i in params.dataset_ids]
-    if input_select_model.get_value():
-        model_name = input_select_model.get_value()
-    else:
-        model_name = table_model_select.get_selected_row(StateJson())[0]
+    model_name, model_params = get_selected_model()
+
     instance_mode = str(select_instance_mode.get_value())
     expand_hw = [int(input_expand_wh.value)] * 2
     projection_method = str(select_projection_method.get_value())
