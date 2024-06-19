@@ -319,7 +319,8 @@ if __name__ == "__main__":
         json.dump(cfg, f)
     torch.save(embeddings, save_paths["embeddings"])
     print("uploading to team_files...")
-    api.file.upload_bulk(team_id, list(save_paths.values()), list(save_paths.values()))
+    remote_paths = [f"/{p}" for p in list(save_paths.values())]
+    api.file.upload_bulk(team_id, list(save_paths.values()), remote_paths)
 
     print("result shape:", embeddings.shape)
     print("done")
