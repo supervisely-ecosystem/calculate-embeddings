@@ -1,4 +1,4 @@
-FROM supervisely/base-py-sdk:6.73.61
+FROM supervisely/base-py-sdk:6.73.90
 
 
 ENV DEBIAN_FRONTEND=noninteractive
