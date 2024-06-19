@@ -364,7 +364,10 @@ def run():
     file_id = str(api.file.get_info_by_path(team_id, "/" + save_paths["embeddings"]).id)
     server_address = os.environ.get("SERVER_ADDRESS")
     if server_address:
-        url = f"{server_address}/files/{file_id}"
+        if sly.is_development():
+            url = sly.utils.abs_url(f"files/{file_id}")
+        else:
+            url = f"/files/{file_id}"
         info_run.description += f"all was saved to team_files: <a href={url}>{save_paths['embeddings']}</a><br>"
 
     # 6. Show chart
