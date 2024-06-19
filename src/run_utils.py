@@ -50,7 +50,8 @@ def upload_embeddings(embeddings, info_updated, cfg, api, path_prefix, save_path
     with open(save_paths["cfg"], "w") as f:
         json.dump(cfg, f)
     torch.save(embeddings, save_paths["embeddings"])
-    api.file.upload_bulk(team_id, list(save_paths.values()), list(save_paths.values()))
+    remote_paths = [f"/{p}" for p in list(save_paths.values())]
+    api.file.upload_bulk(team_id, list(save_paths.values()), remote_paths)
 
 
 def download_embeddings(api, path_prefix, save_paths, team_id):
