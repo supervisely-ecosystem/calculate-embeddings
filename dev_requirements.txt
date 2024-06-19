@@ -1,6 +1,6 @@
-supervisely
-transformers
-timm
+supervisely==6.72.134
+transformers==4.33.2
+timm==0.9.5
 torch
-scikit-learn
-umap-learn
+scikit-learn==1.3.1
+umap-learn==0.5.4
