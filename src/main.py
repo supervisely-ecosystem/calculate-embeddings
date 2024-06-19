@@ -359,7 +359,8 @@ def run():
             projections = run_utils.calculate_projections(embeddings, all_info_list, projection_method, metric=metric)
         print("uploading projections to team_files...")
         torch.save(projections, save_paths["projections"])
-        api.file.upload(team_id, save_paths["projections"], save_paths["projections"])
+        remote_path = f"/{save_paths['projections']}"
+        api.file.upload(team_id, save_paths["projections"], remote_path)
     file_id = str(api.file.get_info_by_path(team_id, "/" + save_paths["embeddings"]).id)
     server_address = os.environ.get("SERVER_ADDRESS")
     if server_address:

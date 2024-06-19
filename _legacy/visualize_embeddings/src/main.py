@@ -100,7 +100,8 @@ else:
     )
     torch.save(projections, save_paths["projections"])
     print("uploading projections to team_files...")
-    api.file.upload(team_id, save_paths["projections"], save_paths["projections"])
+    remote_path = f"/{save_paths['projections']}"
+    api.file.upload(team_id, save_paths["projections"], remote_path)
 
 
 obj_classes = list(set(all_info["object_cls"]))
