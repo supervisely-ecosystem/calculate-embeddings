@@ -27,18 +27,14 @@ print(f"{torch.__version__}, {torch.version.cuda}, {torch.cuda.is_available()}")
 # ]
 
 
-def get_crops(img_np, yxyx_coords, hw_expand=(0, 0)):
-    """Crop image to patches according to yxyx_coords"""
-    crops = []
+def get_crop(img_np, yxyx, hw_expand=(0, 0)) -> np.ndarray:
     h, w = hw_expand
-    for yxyx in yxyx_coords:
-        y1, x1, y2, x2 = yxyx
-        y1, y2 = y1 - h, y2 + h
-        x1, x2 = x1 - w, x2 + w
-        y1, x1, y2, x2 = [max(0, coord) for coord in (y1, x1, y2, x2)]  # clip coords
-        crop = img_np[y1:y2, x1:x2, :]
-        crops.append(crop)
-    return crops
+    y1, x1, y2, x2 = yxyx
+    y1, y2 = y1 - h, y2 + h
+    x1, x2 = x1 - w, x2 + w
+    y1, x1, y2, x2 = [max(0, coord) for coord in (y1, x1, y2, x2)]  # clip coords
+    crop = img_np[y1:y2, x1:x2, :]
+    return crop
 
 
 def extract_crops(
@@ -68,20 +64,21 @@ def extract_crops(
         result_yxyx.append([0, 0, img_np.shape[0], img_np.shape[1]])
         result_obj_cls.append(None)
     if instance_mode in ["objects", "both"]:
-        yxyx_coords = []
         for label in labels:
             if not isinstance(label.geometry, accepted_geometry):
                 continue
             if label.geometry.area < 9:
                 continue
             rect = label.geometry.to_bbox()
-            yxyx_coords.append([rect.top, rect.left, rect.bottom, rect.right])
+            yxyx = [rect.top, rect.left, rect.bottom, rect.right]
+            crop = get_crop(img_np, yxyx, hw_expand=hw_expand)
+            if crop.size < 9:
+                continue
+            crop = cv2.resize(crop, input_size_hw[::-1], interpolation=resize_interpolation)
+            result_crops.append(crop)
+            result_yxyx.append(yxyx)
             result_obj_cls.append(label.obj_class.name)
             result_labels.append(label)
-        crops = get_crops(img_np, yxyx_coords, hw_expand=hw_expand)
-        crops = [cv2.resize(crop, input_size_hw[::-1], interpolation=resize_interpolation) for crop in crops]
-        result_yxyx += yxyx_coords
-        result_crops += crops
     assert len(result_crops) == len(result_obj_cls) == len(result_yxyx)
     return result_crops, result_obj_cls, result_yxyx, result_labels
 
@@ -139,7 +136,7 @@ def calculate_embeddings_if_needed(
 
     def init_model(model_name, device):
         if info_widget is not None:
-            info_widget.description += f'downloading the model "{model_name}". This may take some time...<br>'
+            info_widget.description += f'Downloading "{model_name}" model. This may take some time...<br>'
         print(f"Running model on {device}")
         model, cfg, format_input = infer_utils.create_model(model_name)
         model.to(device)
@@ -148,7 +145,7 @@ def calculate_embeddings_if_needed(
         cfg["expand_hw"] = expand_hw
         cfg["instance_mode"] = instance_mode
         if info_widget is not None:
-            info_widget.description += f'Inferring dataset on "{device}"...<br>'
+            info_widget.description += f'Running inference using "{device}"...<br>'
         return model, cfg, format_input, input_size_hw, resize_interpolation
 
     def infer_one(image, labels, instance_mode):
