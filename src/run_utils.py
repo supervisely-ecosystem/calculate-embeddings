@@ -38,7 +38,7 @@ def calculate_projections(embeddings, all_info_list, projection_method, metric="
             raise ValueError(f"unexpexted projection_method {projection_method}")
     except Exception as e:
         print(e)
-        raise RuntimeError(f"count of embeddings = {len(embeddings)}, it may too small to project")
+        raise RuntimeError(f"count of embeddings = {len(embeddings)}, not enough to calculate projections.")
     return projections
 
 

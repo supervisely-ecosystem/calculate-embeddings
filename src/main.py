@@ -135,7 +135,7 @@ input_expand_wh = InputNumber(0, -10000, 10000)
 input_expand_wh_f = Field(
     input_expand_wh,
     "Expand crops (px)",
-    "Expand rectangles of the cropped objects by a few pixels on both XY sides. Use it to give the model a little context on the boundary of objects.",
+    "Expand bounding boxes by the given number of pixels on all sides (both X and Y axes). This helps provide the model with some context around the boundaries of the objects.",
 )
 content = Container([select_instance_mode_f, input_expand_wh_f])
 card_preprocessing_settings = Card(title="Preprocessing settings", content=content, collapsable=True)
@@ -344,7 +344,7 @@ def run():
         api.file.download(team_id, "/" + save_paths["projections"], save_paths["projections"])
         projections = torch.load(save_paths["projections"])
     else:
-        info_run.description += "calculating projections...<br>"
+        info_run.description += "Calculating projections...<br>"
         print("calculating projections...")
         if len(embeddings) <= 1:
             info_run.description += f"the count of embeddings (n={len(embeddings)}) must be > 1<br>"
@@ -353,7 +353,7 @@ def run():
             projections = run_utils.calculate_projections(embeddings, all_info_list, projection_method, metric=metric)
         except RuntimeError:
             info_run.description += (
-                f"the count of embeddings is {len(embeddings)}, it is too small to project with UMAP, trying PCA...<br>"
+                f"the count of embeddings is {len(embeddings)}, not enough to use UMAP. Trying PCA instead...<br>"
             )
             projection_method = "PCA"
             projections = run_utils.calculate_projections(embeddings, all_info_list, projection_method, metric=metric)
@@ -368,7 +368,7 @@ def run():
             url = sly.utils.abs_url(f"files/{file_id}")
         else:
             url = f"/files/{file_id}"
-        info_run.description += f"all was saved to team_files: <a href={url}>{save_paths['embeddings']}</a><br>"
+        info_run.description += f"Embeddings were saved to Team Files: <a href={url}>{save_paths['embeddings']}</a><br>"
 
     # 6. Show chart
     obj_classes = list(set(all_info["object_cls"]))
@@ -379,7 +379,7 @@ def run():
     chart.set_series(series, send_changes=True)
     card_embeddings_chart.show()
     update_table()
-    info_run.description += "done!<br>"
+    info_run.description += "Done!<br>"
 
 
 def get_or_create_tag_meta(project_id, tag_meta):
