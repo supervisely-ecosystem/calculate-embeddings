@@ -26,7 +26,7 @@
     "target": ["images_project", "images_dataset"],
     "context_category": "Metric Learning"
   },
-  "min_instance_version": "6.8.48",
+  "instance_version": "6.9.31",
   "need_gpu": false,
   "gpu": "preferred",
   "community_agent": false
