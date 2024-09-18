@@ -102,7 +102,7 @@ def normalize(img_batch, mean, std, np_dtype=np.float32):
 
 
 def calculate_embeddings_if_needed(
-    api,
+    api: sly.Api,
     model_name,
     datasets,
     device,

@@ -72,21 +72,22 @@ update_globals(dataset_ids)
 
 
 ### Dataset selection
-dataset_selector = SelectDataset(project_id=project_id, multiselect=True)
+dataset_selector = SelectDataset(project_id=project_id, multiselect=True, select_all_datasets=True)
 card_project_settings = Card(title="Dataset selection", content=dataset_selector)
 
 ### Model selection
 model_items = [
+    ["facebook/metaclip-b16-fullcc2.5b", "599 MB", "Transformer"],
+    ["openai/clip-vit-base-patch32", "605 MB", "Transformer"],
+    ["openai/clip-vit-large-patch14", "1710 MB", "Transformer"],
     ["facebook/convnext-tiny-224", "114 MB", "ConvNet"],
     ["facebook/convnext-large-384", "791 MB", "ConvNet"],
     ["facebook/convnext-xlarge-224-22k", "1570 MB", "ConvNet"],
-    ["openai/clip-vit-base-patch32", "605 MB", "Transformer"],
-    ["openai/clip-vit-large-patch14", "1710 MB", "Transformer"],
     ["facebook/flava-full", "1430 MB", "Transformer"],
     ["microsoft/beit-large-patch16-224-pt22k", "1250 MB", "Transformer"],
     ["microsoft/beit-large-patch16-384", "1280 MB", "Transformer"],
-    ["beitv2_large_patch16_224", "1310 MB", "Transformer"],
-    ["beitv2_large_patch16_224_in22k", "1310 MB", "Transformer"],
+    ["beitv2_base_patch16_224.in1k_ft_in22k", "414 MB", "Transformer"],
+    ["beitv2_large_patch16_224.in1k_ft_in22k_in1k", "1310 MB", "Transformer"],
     # ["maxvit_large_tf_384.in21k_ft_in1k", "849 MB", "ConvNet+Transformer"],  # now it is at pre-release in timm lib
 ]
 files_list = api.file.list(team_id, "/embeddings")
@@ -94,14 +95,14 @@ rows = run_utils.get_rows(files_list, model_items, project_info)
 column_names = ["Name", "Model size", "Architecture type", "Already calculated"]
 table_model_select = RadioTable(column_names, rows)
 table_model_select_f = Field(table_model_select, "Click on the table to select a model:")
-input_select_model = Input("", placeholder="timm/vit_base_patch16_clip_224.openai")
+input_select_model = Input("", placeholder="facebook/metaclip-l14-fullcc2.5b")
 desc_select_model = Text(
-    "...or you can type a model_name from <a href='https://huggingface.co/models?sort=downloads&search=timm%2F'>timm</a>",
+    "Alternatively, you can paste model name from <a href='https://huggingface.co/models?pipeline_tag=zero-shot-image-classification&sort=downloads' target='_blank'>hugging face</a> (some models may not work)."
 )
 device_names, torch_devices = run_utils.get_devices()
 select_device = Select([Select.Item(v, l) for v, l in zip(torch_devices, device_names)])
 select_device_f = Field(select_device, "Device")
-input_batch_size = InputNumber(2, 1, 10000)
+input_batch_size = InputNumber(4, 1, 1024)
 input_batch_size_f = Field(
     input_batch_size,
     "Batch size",
@@ -126,6 +127,7 @@ select_instance_mode = SelectString(
         "both",
     ]
 )
+select_instance_mode.set_value("images")
 select_instance_mode_f = Field(
     select_instance_mode,
     "Instance mode",
@@ -139,7 +141,7 @@ input_expand_wh_f = Field(
 )
 content = Container([select_instance_mode_f, input_expand_wh_f])
 card_preprocessing_settings = Card(title="Preprocessing settings", content=content, collapsable=True)
-card_preprocessing_settings.collapse()
+# card_preprocessing_settings.collapse()
 
 
 ### Visualizer settings
@@ -147,12 +149,12 @@ select_projection_method = SelectString(available_projection_methods)
 select_projection_method_f = Field(
     select_projection_method,
     "Projection method",
-    "A decomposition method: how to project the high-dimensional embeddings onto 2D space for further visualization.",
+    "A decomposition method: how to project the high-dimensional embeddings onto 2D space for visualization.",
 )
 select_metric = SelectString(["euclidean", "cosine"])
 select_metric_f = Field(select_metric, "Metric", "The parameter for projection method")
 content = Container([select_projection_method_f, select_metric_f])
-card_visualizer_settings = Card(title="Visualizer settings", content=content, collapsable=True)
+card_visualizer_settings = Card(title="Decomposition settings", content=content, collapsable=True)
 card_visualizer_settings.collapse()
 
 
