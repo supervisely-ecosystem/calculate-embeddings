@@ -24,6 +24,7 @@ from supervisely.app.widgets import (
     Field,
     Progress,
     SelectDataset,
+    SelectDatasetTree,
     NotificationBox,
 )
 
@@ -72,7 +73,7 @@ update_globals(dataset_ids)
 
 
 ### Dataset selection
-dataset_selector = SelectDataset(project_id=project_id, multiselect=True, select_all_datasets=True)
+dataset_selector = SelectDatasetTree(project_id=project_id, multiselect=True, select_all_datasets=True)
 card_project_settings = Card(title="Dataset selection", content=dataset_selector)
 
 ### Model selection
@@ -281,6 +282,14 @@ def update_table():
 @btn_run.click
 def run():
     global model_name, global_idxs_mapping, all_info_list  # , project_meta, dataset_ids, project_id, workspace_id, team_id
+
+    selected_datasets = set()
+    for dataset_id in dataset_selector.get_selected_ids():
+        selected_datasets.add(dataset_id)
+        for ds in api.dataset.get_nested(project_id=project_id, dataset_id=dataset_id):
+            selected_datasets.add(ds.id)
+    update_globals(list(selected_datasets))
+
     info_run.description = ""
     card_embeddings_chart.hide()
     btn_mark.hide()
