@@ -24,6 +24,8 @@ from supervisely.app.widgets import (
     Field,
     Progress,
     SelectDataset,
+    IFrame,
+    Bokeh,
     SelectDatasetTree,
     NotificationBox,
 )
@@ -169,12 +171,9 @@ card_run = Card(title="Run", content=content)
 
 
 ### Embeddings Chart
-chart = ScatterChart(
-    title=f"None",
-    xaxis_type="numeric",
-    height=600,
-)
-card_chart = Card(content=chart)
+bokeh = Bokeh(plots=[], x_axis_visible=True, y_axis_visible=True, grid_visible=True)
+bokeh_iframe = IFrame()
+card_chart = Card(content=bokeh_iframe)
 labeled_image = LabeledImage()
 text = Text("no object selected")
 show_all_anns = False
@@ -209,11 +208,10 @@ def toggle_ann():
         show_image(cur_info, project_meta)
 
 
-@chart.click
-def on_click(datapoint: ScatterChart.ClickedDataPoint):
+@bokeh.value_changed
+def on_click(selected_idxs):
     global global_idxs_mapping, all_info_list, project_meta, is_marked, tag_meta
-    idx = global_idxs_mapping[datapoint.series_name][datapoint.data_index]
-    info = all_info_list[idx]
+    info = all_info_list[selected_idxs]
     if tag_meta is not None:
         tag = read_tag(info["image_id"], info["object_id"])
         is_marked = bool(tag)
@@ -385,9 +383,11 @@ def run():
     obj_classes = list(set(all_info["object_cls"]))
     print(f"n_classes = {len(obj_classes)}")
     series, colors, global_idxs_mapping = run_utils.make_series(projections, all_info_list, project_meta)
-    chart.set_title(f"{model_name} {project_info.name} {projection_method} embeddings", send_changes=False)
-    chart.set_colors(colors, send_changes=False)
-    chart.set_series(series, send_changes=True)
+    x_coordinates = [i["x"] for i in series[0]["data"]]
+    y_coordinates = [i["y"] for i in series[0]["data"]]
+    plot = Bokeh.Circle(x_coordinates, y_coordinates, radii=0.05, colors=colors)
+    bokeh.add_plots([plot])
+    bokeh_iframe.set(bokeh.get_html_route_with_timestamp(), height="600px", width="100%")
     card_embeddings_chart.show()
     update_table()
     info_run.description += "Done!<br>"
