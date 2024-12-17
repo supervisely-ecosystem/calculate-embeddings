@@ -383,8 +383,13 @@ def run():
     obj_classes = list(set(all_info["object_cls"]))
     print(f"n_classes = {len(obj_classes)}")
     series, colors, global_idxs_mapping = run_utils.make_series(projections, all_info_list, project_meta)
-    x_coordinates = [i["x"] for i in series[0]["data"]]
-    y_coordinates = [i["y"] for i in series[0]["data"]]
+
+    x_coordinates, y_coordinates, colors = [], [], []
+    for s, color in zip(series, colors):
+        x_coordinates.extend([i["x"] for i in s["data"]])
+        y_coordinates.extend([i["y"] for i in s["data"]])
+        colors.extend([color] * len(s["data"]))
+
     plot = Bokeh.Circle(x_coordinates, y_coordinates, radii=0.05, colors=colors)
     bokeh.add_plots([plot])
     bokeh_iframe.set(bokeh.get_html_route_with_timestamp(), height="600px", width="100%")
