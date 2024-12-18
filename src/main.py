@@ -24,6 +24,8 @@ from supervisely.app.widgets import (
     Field,
     Progress,
     SelectDataset,
+    IFrame,
+    Bokeh,
     SelectDatasetTree,
     NotificationBox,
 )
@@ -169,12 +171,9 @@ card_run = Card(title="Run", content=content)
 
 
 ### Embeddings Chart
-chart = ScatterChart(
-    title=f"None",
-    xaxis_type="numeric",
-    height=600,
-)
-card_chart = Card(content=chart)
+bokeh = Bokeh(plots=[], x_axis_visible=True, y_axis_visible=True, grid_visible=True)
+bokeh_iframe = IFrame()
+card_chart = Card(content=bokeh_iframe)
 labeled_image = LabeledImage()
 text = Text("no object selected")
 show_all_anns = False
@@ -209,18 +208,18 @@ def toggle_ann():
         show_image(cur_info, project_meta)
 
 
-@chart.click
-def on_click(datapoint: ScatterChart.ClickedDataPoint):
+@bokeh.value_changed
+def on_click(selected_idxs):
     global global_idxs_mapping, all_info_list, project_meta, is_marked, tag_meta
-    idx = global_idxs_mapping[datapoint.series_name][datapoint.data_index]
-    info = all_info_list[idx]
-    if tag_meta is not None:
-        tag = read_tag(info["image_id"], info["object_id"])
-        is_marked = bool(tag)
-        update_marked()
-    show_image(info, project_meta)
-    if btn_mark.is_hidden():
-        btn_mark.show()
+    if len(selected_idxs) >= 1:
+        info = all_info_list[selected_idxs[0]]
+        if tag_meta is not None:
+            tag = read_tag(info["image_id"], info["object_id"])
+            is_marked = bool(tag)
+            update_marked()
+        show_image(info, project_meta)
+        if btn_mark.is_hidden():
+            btn_mark.show()
 
 
 def update_marked():
@@ -384,10 +383,20 @@ def run():
     # 6. Show chart
     obj_classes = list(set(all_info["object_cls"]))
     print(f"n_classes = {len(obj_classes)}")
-    series, colors, global_idxs_mapping = run_utils.make_series(projections, all_info_list, project_meta)
-    chart.set_title(f"{model_name} {project_info.name} {projection_method} embeddings", send_changes=False)
-    chart.set_colors(colors, send_changes=False)
-    chart.set_series(series, send_changes=True)
+    series, pre_colors, global_idxs_mapping = run_utils.make_series(projections, all_info_list, project_meta)
+
+    series_len = len(series)
+    x_coordinates, y_coordinates, colors = [], [], []
+    for s, color in zip(series, pre_colors):
+        x_coordinates.extend([i["x"] for i in s["data"]])
+        y_coordinates.extend([i["y"] for i in s["data"]])
+        colors.extend([color] * len(s["data"]))
+
+    r = 0.15 if series_len > 1000 else 0.1
+    plot = Bokeh.Circle(x_coordinates, y_coordinates, radii=r, colors=colors)
+    bokeh.clear()
+    bokeh.add_plots([plot])
+    bokeh_iframe.set(bokeh.html_route_with_timestamp, height="650px", width="100%")
     card_embeddings_chart.show()
     update_table()
     info_run.description += "Done!<br>"
