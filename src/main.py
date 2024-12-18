@@ -392,7 +392,7 @@ def run():
         y_coordinates.extend([i["y"] for i in s["data"]])
         colors.extend([color] * len(s["data"]))
 
-    r = 0.1 if series_len > 1000 else 0.05
+    r = 0.15 if series_len > 1000 else 0.1
     plot = Bokeh.Circle(x_coordinates, y_coordinates, radii=r, colors=colors)
     bokeh.clear()
     bokeh.add_plots([plot])
