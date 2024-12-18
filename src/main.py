@@ -392,10 +392,8 @@ def run():
         y_coordinates.extend([i["y"] for i in s["data"]])
         colors.extend([color] * len(s["data"]))
 
-    r = 0.05
-    if series_len > 1000:
-        r = 0.2
-    plot = Bokeh.Circle(x_coordinates, y_coordinates, radii=0.05, colors=colors)
+    r = 0.2 if series_len > 1000 else 0.5
+    plot = Bokeh.Circle(x_coordinates, y_coordinates, radii=r, colors=colors)
     bokeh.clear()
     bokeh.add_plots([plot])
     bokeh_iframe.set(bokeh.html_route_with_timestamp, height="650px", width="100%")
