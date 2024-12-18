@@ -11,5 +11,7 @@ RUN pip3 install transformers==4.33.2 timm==0.9.5 scikit-learn==1.3.1 umap-learn
 # Download metaclip base model
 RUN python -c 'import transformers; transformers.AutoModel.from_pretrained("facebook/metaclip-b16-fullcc2.5b")'
 
-RUN pip3 install supervisely==6.73.170
-LABEL python_sdk_version=6.73.170
+RUN pip3 install supervisely==6.73.258
+RUN pip3 install fastapi==0.109.0 bokeh==3.1.1
+
+LABEL python_sdk_version=6.73.258
