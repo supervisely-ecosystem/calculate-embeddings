@@ -392,6 +392,7 @@ def run():
         colors.extend([color] * len(s["data"]))
 
     plot = Bokeh.Circle(x_coordinates, y_coordinates, radii=0.05, colors=colors)
+    bokeh.clear()
     bokeh.add_plots([plot])
     bokeh_iframe.set(bokeh.html_route_with_timestamp, height="650px", width="100%")
     card_embeddings_chart.show()
