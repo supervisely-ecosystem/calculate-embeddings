@@ -211,7 +211,7 @@ def toggle_ann():
 @bokeh.value_changed
 def on_click(selected_idxs):
     global global_idxs_mapping, all_info_list, project_meta, is_marked, tag_meta
-    if len(selected_idxs) == 1:
+    if len(selected_idxs) >= 1:
         info = all_info_list[selected_idxs[0]]
         if tag_meta is not None:
             tag = read_tag(info["image_id"], info["object_id"])
@@ -385,12 +385,16 @@ def run():
     print(f"n_classes = {len(obj_classes)}")
     series, pre_colors, global_idxs_mapping = run_utils.make_series(projections, all_info_list, project_meta)
 
+    series_len = len(series)
     x_coordinates, y_coordinates, colors = [], [], []
     for s, color in zip(series, pre_colors):
         x_coordinates.extend([i["x"] for i in s["data"]])
         y_coordinates.extend([i["y"] for i in s["data"]])
         colors.extend([color] * len(s["data"]))
 
+    r = 0.05
+    if series_len > 1000:
+        r = 0.2
     plot = Bokeh.Circle(x_coordinates, y_coordinates, radii=0.05, colors=colors)
     bokeh.clear()
     bokeh.add_plots([plot])
