@@ -9,7 +9,6 @@ import sklearn.manifold
 import sklearn.cluster
 import sklearn.decomposition
 import umap
-from matplotlib.colors import rgb2hex
 import re
 
 
@@ -79,7 +78,7 @@ def make_series(projections, all_info_list, project_meta):
         global_idxs_mapping[obj_cls].append(i)
 
     series = [{"name": k, "data": v} for k, v in series.items()]
-    obj2color = {x.name: rgb2hex(np.array(x.color) / 255) for x in project_meta.obj_classes.items()}
+    obj2color = {x.name: sly.color.rgb2hex(x.color) for x in project_meta.obj_classes}
     obj2color["Image"] = "#222222"
     colors = [obj2color[s["name"]] for s in series]
 
