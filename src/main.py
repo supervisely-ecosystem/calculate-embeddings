@@ -184,6 +184,9 @@ chart_size_input = BindedInputNumber(height=500, width=1000, min=300)
 chart_size_btn = Button("Change chart size", button_size="small", plain=True)
 chart_size = Container([chart_size_input, chart_size_btn])
 
+zoom_to_figure = Checkbox("Zoom to object")
+need_zoom = zoom_to_figure.is_checked()
+
 chart_settings = Field(
     Container([dot_size, chart_size]),
     "Chart settings",
@@ -210,7 +213,7 @@ show_all_anns = False
 cur_info = None
 btn_toggle = Button(f"Show all annotations: {show_all_anns}", "default", button_size="small")
 btn_mark = Button(f"Assign tag 'MARKED'", button_size="small")
-preview_widgets = Container([labeled_image, text, btn_toggle, btn_mark])
+preview_widgets = Container([labeled_image, text, zoom_to_figure, btn_toggle, btn_mark])
 preview_widgets.hide()
 
 
@@ -247,6 +250,15 @@ app = sly.Application(
         ]
     )
 )
+
+
+@zoom_to_figure.value_changed
+def on_zoom_change(value: bool):
+    global need_zoom
+    need_zoom = value
+
+    if cur_info is not None and cur_info["object_id"] is not None:
+        show_image(cur_info, project_meta)
 
 
 @dot_size_btn.click
@@ -388,7 +400,7 @@ def on_mark():
 
 
 def show_image(info, project_meta):
-    global cur_info, show_all_anns
+    global cur_info, show_all_anns, need_zoom
     cur_info = info
     image_id, obj_cls, obj_id = info["image_id"], info["object_cls"], info["object_id"]
     labeled_image.loading = True
@@ -399,7 +411,12 @@ def show_image(info, project_meta):
         ann_json["objects"] = [obj for obj in ann_json["objects"] if obj["id"] == obj_id]
     ann = sly.Annotation.from_json(ann_json, project_meta) if len(ann_json["objects"]) else None
 
-    labeled_image.set(title=image.name, image_url=image.preview_url, ann=ann, image_id=image_id)
+    if need_zoom and obj_id is not None:
+        labeled_image.set(
+            title=image.name, image_url=image.preview_url, ann=ann, image_id=image_id, zoom_to=obj_id, zoom_factor=1.5
+        )
+    else:
+        labeled_image.set(title=image.name, image_url=image.preview_url, ann=ann, image_id=image_id)
     text.set("object class: " + str(obj_cls), "info")
     labeled_image.loading = False
 
