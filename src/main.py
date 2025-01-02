@@ -17,6 +17,7 @@ from supervisely.app.widgets import (
     Select,
     SelectString,
     InputNumber,
+    BindedInputNumber,
     Input,
     Checkbox,
     Button,
@@ -175,9 +176,21 @@ content = Container([btn_run, check_force_recalculate, progress, info_run])
 card_run = Card(title="Run", content=content)
 
 ### Embeddings Chart Settings
-dot_size_btn = Button("Change dots size", button_size="small")
+dot_size_btn = Button("Change dots size", button_size="small", plain=True)
 dot_size_num = InputNumber(min=0.01, value=0.05, step=0.01)
-dot_size = Flexbox([Container([dot_size_num, dot_size_btn], direction="horizontal")])
+dot_size = Container([dot_size_num, dot_size_btn])
+
+chart_size_input = BindedInputNumber(height=500, width=1000, min=300)
+chart_size_btn = Button("Change chart size", button_size="small", plain=True)
+chart_size = Container([chart_size_input, chart_size_btn])
+
+chart_settings = Field(
+    Container([dot_size, chart_size]),
+    "Chart settings",
+    "Change the size of the chart and the size of the dots on the chart",
+)
+chart_settings.hide()
+
 
 ### Embeddings Chart
 bokeh = Bokeh(
@@ -190,7 +203,7 @@ bokeh = Bokeh(
     legend_click_policy="hide",
 )
 bokeh_iframe = IFrame()
-card_chart = Card(content=Container([dot_size, bokeh_iframe]), title="Embeddings chart", collapsable=True)
+card_chart = Card(content=bokeh_iframe, title="Embeddings chart", collapsable=True)
 labeled_image = LabeledImage()
 text = Text("no object selected")
 show_all_anns = False
@@ -216,7 +229,7 @@ batch_tagging_cont.hide()
 
 card_preview = Card(
     title="Preview card",
-    content=Container(widgets=[preview_widgets, batch_tagging_cont]),
+    content=Container(widgets=[preview_widgets, batch_tagging_cont, chart_settings]),
 )
 card_embeddings_chart = Container(widgets=[card_chart, card_preview], direction="horizontal", fractions=[3, 1])
 card_embeddings_chart.hide()
@@ -239,7 +252,14 @@ app = sly.Application(
 @dot_size_btn.click
 def change_dot_size():
     bokeh.update_radii(dot_size_num.value)
-    bokeh_iframe.set(bokeh.html_route_with_timestamp, height="650px", width="100%")
+    bokeh_iframe.set(bokeh.html_route_with_timestamp)
+
+
+@chart_size_btn.click
+def on_click():
+    width, height = chart_size_input.get_value()
+    bokeh.update_chart_size(width, height)
+    bokeh_iframe.set(bokeh.html_route_with_timestamp, height=f"{height + 50}px", width=f"{width + 50}px")
 
 
 @btn_toggle.click
@@ -279,7 +299,7 @@ def on_click(selected_idxs: List[Tuple[Union[int, str], List[int]]]):
         is_objects = any([info["object_id"] is not None for info in cur_infos])
         is_images = any([info["object_id"] is None for info in cur_infos])
         both = is_objects and is_images
-        
+
         t = f"{len(cur_infos)} "
         t += "items. " if both else "images. " if is_images else "objects. "
         t += f"Object classes: {str(obj_clss)}. "
@@ -522,6 +542,7 @@ def run():
     bokeh.add_plots(plots)
     bokeh_iframe.set(bokeh.html_route_with_timestamp, height="650px", width="100%")
     card_embeddings_chart.show()
+    chart_settings.show()
     update_table()
     info_run.description += "Done!<br>"
 
