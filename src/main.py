@@ -44,22 +44,22 @@ def update_globals(new_dataset_ids):
         team_id = api.workspace.get_info_by_id(workspace_id).team_id
         project_info = api.project.get_info_by_id(project_id)
         project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
-        print(f"Project is {project_info.name}, {dataset_ids}")
+        sly.logger.info(f"Project is {project_info.name}, {dataset_ids}")
     elif project_id:
         workspace_id = api.project.get_info_by_id(project_id).workspace_id
         team_id = api.workspace.get_info_by_id(workspace_id).team_id
         project_info = api.project.get_info_by_id(project_id)
         project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
     else:
-        print("All globals set to None")
+        sly.logger.info("All globals set to None")
         dataset_ids = []
         project_id, workspace_id, team_id, project_info, project_meta = [None] * 5
     if dataset_ids or project_id:
         is_marked = False
         tag_meta = project_meta.get_tag_meta(tag_name)
-        print("tag_meta is exists:", bool(tag_meta))
+        sly.logger.info("tag_meta exists:", bool(tag_meta))
         issue_tag_meta = project_meta.get_tag_meta(issue_tag_name)
-        print("issue_tag_meta is exists:", bool(issue_tag_meta))
+        sly.logger.info("issue_tag_meta exists:", bool(issue_tag_meta))
 
 
 ### Globals init
@@ -131,12 +131,11 @@ card_model_selection = Card(title="Model selection", content=content)
 ### Preprocessing settings
 select_instance_mode = SelectString(
     [
-        "objects",
         "images",
+        "objects",
         "both",
     ]
 )
-select_instance_mode.set_value("images")
 select_instance_mode_f = Field(
     select_instance_mode,
     "Instance mode",
@@ -357,7 +356,7 @@ def update_marked():
 def issue_tagging():
     global project_meta, cur_infos, issue_tag_meta
     if issue_tag_meta is None:
-        print("first marking, creating tag_meta")
+        sly.logger.debug("first marking, creating tag_meta")
         issue_tag_meta = sly.TagMeta(issue_tag_name, sly.TagValueType.NONE)
         project_meta, issue_tag_meta = get_or_create_tag_meta(project_id, issue_tag_meta)
 
@@ -385,7 +384,7 @@ def issue_tagging():
 def on_mark():
     global project_info, project_meta, tag_meta, cur_info, is_marked
     if tag_meta is None:
-        print("first marking, creating tag_meta")
+        sly.logger.debug("first marking, creating tag_meta")
         tag_meta = sly.TagMeta(tag_name, sly.TagValueType.NONE)
         project_meta, tag_meta = get_or_create_tag_meta(project_id, tag_meta)
         is_marked = False
@@ -470,9 +469,19 @@ def run():
 
     # 2. Load embeddings if exist
     if api.file.exists(team_id, "/" + save_paths["info"]) and not force_recalculate:
+        sly.logger.info("Found existing embeddings")
         info_run.description += "found existing embeddings<br>"
         embeddings, all_info, cfg = run_utils.download_embeddings(api, path_prefix, save_paths, team_id)
-        print("embeddings downloaded. n =", len(embeddings))
+        previous_instance_mode = all_info["instance_mode"]
+        if previous_instance_mode != instance_mode:
+            info_run.description += f"Force embeddings recalculation. Instance mode was changed from '{previous_instance_mode}' to '{instance_mode}'.<br>"
+            embeddings, all_info, cfg = None, None, None
+            force_recalculate = True
+            sly.logger.info(
+                f"Force embeddings recalculation. Instance mode was changed from '{previous_instance_mode}' to '{instance_mode}'."
+            )
+        else:
+            sly.logger.debug("embeddings downloaded. n =", len(embeddings))
     else:
         embeddings, all_info, cfg = None, None, None
 
@@ -499,19 +508,19 @@ def run():
     # 4. Save embeddings if it was updated
     is_updated = is_updated or force_recalculate
     if is_updated:
-        print("uploading embeddings to team_files...")
+        sly.logger.info("uploading embeddings to team_files...")
         run_utils.upload_embeddings(embeddings, all_info, cfg, api, path_prefix, save_paths, team_id)
 
     # 5. Calculate projections or load from team_files
     all_info_list = [dict(tuple(zip(all_info.keys(), vals))) for vals in zip(*list(all_info.values()))]
     if api.file.exists(team_id, "/" + save_paths["projections"]) and not is_updated:
         info_run.description += "found existing projections<br>"
-        print("downloading projections...")
+        sly.logger.info("downloading projections...")
         api.file.download(team_id, "/" + save_paths["projections"], save_paths["projections"])
         projections = torch.load(save_paths["projections"])
     else:
         info_run.description += "Calculating projections...<br>"
-        print("calculating projections...")
+        sly.logger.info("calculating projections...")
         if len(embeddings) <= 1:
             info_run.description += f"the count of embeddings (n={len(embeddings)}) must be > 1<br>"
             return
@@ -523,7 +532,7 @@ def run():
             )
             projection_method = "PCA"
             projections = run_utils.calculate_projections(embeddings, all_info_list, projection_method, metric=metric)
-        print("uploading projections to team_files...")
+        sly.logger.info("uploading projections to team_files...")
         torch.save(projections, save_paths["projections"])
         remote_path = f"/{save_paths['projections']}"
         api.file.upload(team_id, save_paths["projections"], remote_path)
@@ -538,7 +547,7 @@ def run():
 
     # 6. Show chart
     obj_classes = list(set(all_info["object_cls"]))
-    print(f"n_classes = {len(obj_classes)}")
+    sly.logger.debug(f"n_classes = {len(obj_classes)}")
     series, pre_colors, global_idxs_mapping = run_utils.make_series(projections, all_info_list, project_meta)
 
     bokeh.clear()

@@ -10,7 +10,7 @@ from collections import defaultdict
 
 from . import infer_utils
 
-print(f"{torch.__version__}, {torch.version.cuda}, {torch.cuda.is_available()}")
+sly.logger.debug(f"{torch.__version__}, {torch.version.cuda}, {torch.cuda.is_available()}")
 
 
 # example_model_names = [
@@ -128,6 +128,7 @@ def calculate_embeddings_if_needed(
             "object_cls": [],
             "crop_yxyx": [],
             "updated_at": [],
+            "instance_mode": instance_mode,
         }
         embeddings = None
 
@@ -137,7 +138,7 @@ def calculate_embeddings_if_needed(
     def init_model(model_name, device):
         if info_widget is not None:
             info_widget.description += f'Downloading "{model_name}" model. This may take some time...<br>'
-        print(f"Running model on {device}")
+        sly.logger.info(f"Running model on {device}")
         model, cfg, format_input = infer_utils.create_model(model_name)
         model.to(device)
         input_size_hw = cfg["input_size"]
@@ -262,10 +263,10 @@ def calculate_embeddings_if_needed(
     to_del_img_ids += list(set(img_id2upd) - set(all_dataset_img_ids))
     to_del_img_ids = list(set(to_del_img_ids))
 
-    print("to_del:", len(to_del_img_ids))
-    print("to_add:", len(to_add_embeds))
+    sly.logger.debug("to_del:", len(to_del_img_ids))
+    sly.logger.debug("to_add:", len(to_add_embeds))
     if len(to_del_img_ids) == 0 and len(to_add_info_list) == 0:
-        print("All embeddings are up to date!")
+        sly.logger.info("All embeddings are up to date!")
         return None, None, None, False
 
     info_updated = info_old_list
@@ -292,6 +293,7 @@ def calculate_embeddings_if_needed(
         for k, v in d.items():
             info_updated_dict[k].append(v)
     info_updated = info_updated_dict
+    info_updated["instance_mode"] = instance_mode
 
-    print(f"Embeddings have been calculated, shape = {embeddings.shape}")
+    sly.logger.info(f"Embeddings have been calculated, shape = {embeddings.shape}")
     return embeddings, info_updated, cfg, True
