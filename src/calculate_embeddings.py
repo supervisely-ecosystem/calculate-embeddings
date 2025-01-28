@@ -263,8 +263,8 @@ def calculate_embeddings_if_needed(
     to_del_img_ids += list(set(img_id2upd) - set(all_dataset_img_ids))
     to_del_img_ids = list(set(to_del_img_ids))
 
-    sly.logger.debug("to_del:", len(to_del_img_ids))
-    sly.logger.debug("to_add:", len(to_add_embeds))
+    sly.logger.debug(f"to_del: {len(to_del_img_ids)}")
+    sly.logger.debug(f"to_add: {len(to_add_embeds)}")
     if len(to_del_img_ids) == 0 and len(to_add_info_list) == 0:
         sly.logger.info("All embeddings are up to date!")
         return None, None, None, False
