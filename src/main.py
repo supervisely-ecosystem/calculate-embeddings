@@ -57,9 +57,9 @@ def update_globals(new_dataset_ids):
     if dataset_ids or project_id:
         is_marked = False
         tag_meta = project_meta.get_tag_meta(tag_name)
-        sly.logger.info("tag_meta exists:", bool(tag_meta))
+        sly.logger.info(f"tag_meta exists: {bool(tag_meta)}")
         issue_tag_meta = project_meta.get_tag_meta(issue_tag_name)
-        sly.logger.info("issue_tag_meta exists:", bool(issue_tag_meta))
+        sly.logger.info(f"issue_tag_meta exists: {bool(issue_tag_meta)}")
 
 
 ### Globals init
@@ -196,7 +196,6 @@ chart_settings.hide()
 
 ### Embeddings Chart
 bokeh = Bokeh(
-    plots=[],
     x_axis_visible=True,
     y_axis_visible=True,
     grid_visible=True,
@@ -262,7 +261,7 @@ def on_zoom_change(value: bool):
 
 @dot_size_btn.click
 def change_dot_size():
-    bokeh.update_radii(dot_size_num.value)
+    bokeh.update_point_size(dot_size_num.value)
     bokeh_iframe.set(bokeh.html_route_with_timestamp)
 
 
@@ -283,16 +282,25 @@ def toggle_ann():
 
 
 @bokeh.value_changed
-def on_click(selected_idxs: List[Tuple[Union[int, str], List[int]]]):
+def on_click(selected_ids: List[List[int]]):
     global global_idxs_mapping, all_info_list, project_meta, is_marked, tag_meta, cur_infos
 
     issue_tag_text.text = ""
-    batch_tagging_cont.show()
+    batch_text.text = ""
+    batch_tagging_cont.hide()
+    preview_widgets.hide()
 
-    selected_ids = [global_idxs_mapping[d.plot_id][i] for d in selected_idxs for i in d.selected_ids]
+    if len(selected_ids) >= 1:
+        curr_selected_ids = selected_ids[-1]
+        maxlen_selected_ids = max(selected_ids, key=len)
+        if len(curr_selected_ids) != len(maxlen_selected_ids):
+            curr_selected_ids = maxlen_selected_ids
+        selected_ids = curr_selected_ids
+
     selected_cnt = len(selected_ids)
     if selected_cnt == 1:
         batch_text.text = ""
+        batch_tagging_cont.show()
         preview_widgets.show()
         info = all_info_list[selected_ids[0]]
         cur_infos = [info]
@@ -304,7 +312,7 @@ def on_click(selected_idxs: List[Tuple[Union[int, str], List[int]]]):
         if btn_mark.is_hidden():
             btn_mark.show()
     elif selected_cnt > 1:
-        preview_widgets.hide()
+        batch_tagging_cont.show()
         cur_infos = [all_info_list[i] for i in selected_ids]
         obj_clss = list(set([info["object_cls"] for info in cur_infos]))
         is_objects = any([info["object_id"] is not None for info in cur_infos])
@@ -472,7 +480,7 @@ def run():
         sly.logger.info("Found existing embeddings")
         info_run.description += "found existing embeddings<br>"
         embeddings, all_info, cfg = run_utils.download_embeddings(api, path_prefix, save_paths, team_id)
-        previous_instance_mode = all_info["instance_mode"]
+        previous_instance_mode = cfg["instance_mode"]
         if previous_instance_mode != instance_mode:
             info_run.description += f"Force embeddings recalculation. Instance mode was changed from '{previous_instance_mode}' to '{instance_mode}'.<br>"
             embeddings, all_info, cfg = None, None, None
@@ -508,6 +516,11 @@ def run():
     # 4. Save embeddings if it was updated
     is_updated = is_updated or force_recalculate
     if is_updated:
+        if cfg is None:
+            cfg = {"instance_mode": instance_mode}
+        else:
+            cfg["instance_mode"] = instance_mode
+
         sly.logger.info("uploading embeddings to team_files...")
         run_utils.upload_embeddings(embeddings, all_info, cfg, api, path_prefix, save_paths, team_id)
 
@@ -551,21 +564,20 @@ def run():
     series, pre_colors, global_idxs_mapping = run_utils.make_series(projections, all_info_list, project_meta)
 
     bokeh.clear()
-    plots = []
+    r = 0.05
+    curr_id = 0
     for s, color in zip(series, pre_colors):
-        x_coordinates = [i["x"] for i in s["data"]]
-        y_coordinates = [i["y"] for i in s["data"]]
-        r = 0.05
-        plot = Bokeh.Circle(
-            x_coordinates,
-            y_coordinates,
-            radii=r,
-            colors=[color] * len(s["data"]),
-            legend_label=s["name"],
-            plot_id=s["name"],
-        )
-        plots.append(plot)
-    bokeh.add_plots(plots)
+        data_source = {}
+        data_source["x"] = [i["x"] for i in s["data"]]
+        data_source["y"] = [i["y"] for i in s["data"]]
+        data_source["radius"] = [r] * len(s["data"])
+        data_source["colors"] = [color] * len(s["data"])
+        data_source["ids"] = global_idxs_mapping[s["name"]]
+        data_source["names"] = [s["name"]] * len(s["data"])
+        curr_id += len(s["data"])
+        bokeh.add_data(**data_source)
+        bokeh.add_plot(Bokeh.Circle(name=s["name"]))
+
     bokeh_iframe.set(bokeh.html_route_with_timestamp, height="650px", width="100%")
     card_embeddings_chart.show()
     chart_settings.show()

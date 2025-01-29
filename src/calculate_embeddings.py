@@ -128,7 +128,6 @@ def calculate_embeddings_if_needed(
             "object_cls": [],
             "crop_yxyx": [],
             "updated_at": [],
-            "instance_mode": instance_mode,
         }
         embeddings = None
 
@@ -263,8 +262,8 @@ def calculate_embeddings_if_needed(
     to_del_img_ids += list(set(img_id2upd) - set(all_dataset_img_ids))
     to_del_img_ids = list(set(to_del_img_ids))
 
-    sly.logger.debug("to_del:", len(to_del_img_ids))
-    sly.logger.debug("to_add:", len(to_add_embeds))
+    sly.logger.debug(f"to_del: {len(to_del_img_ids)}")
+    sly.logger.debug(f"to_add: {len(to_add_embeds)}")
     if len(to_del_img_ids) == 0 and len(to_add_info_list) == 0:
         sly.logger.info("All embeddings are up to date!")
         return None, None, None, False
@@ -293,7 +292,5 @@ def calculate_embeddings_if_needed(
         for k, v in d.items():
             info_updated_dict[k].append(v)
     info_updated = info_updated_dict
-    info_updated["instance_mode"] = instance_mode
-
     sly.logger.info(f"Embeddings have been calculated, shape = {embeddings.shape}")
     return embeddings, info_updated, cfg, True
