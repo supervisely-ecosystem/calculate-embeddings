@@ -480,7 +480,7 @@ def run():
         sly.logger.info("Found existing embeddings")
         info_run.description += "found existing embeddings<br>"
         embeddings, all_info, cfg = run_utils.download_embeddings(api, path_prefix, save_paths, team_id)
-        previous_instance_mode = all_info["instance_mode"]
+        previous_instance_mode = cfg["instance_mode"]
         if previous_instance_mode != instance_mode:
             info_run.description += f"Force embeddings recalculation. Instance mode was changed from '{previous_instance_mode}' to '{instance_mode}'.<br>"
             embeddings, all_info, cfg = None, None, None
@@ -516,6 +516,11 @@ def run():
     # 4. Save embeddings if it was updated
     is_updated = is_updated or force_recalculate
     if is_updated:
+        if cfg is None:
+            cfg = {"instance_mode": instance_mode}
+        else:
+            cfg["instance_mode"] = instance_mode
+
         sly.logger.info("uploading embeddings to team_files...")
         run_utils.upload_embeddings(embeddings, all_info, cfg, api, path_prefix, save_paths, team_id)
 

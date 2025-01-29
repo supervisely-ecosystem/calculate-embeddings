@@ -128,7 +128,6 @@ def calculate_embeddings_if_needed(
             "object_cls": [],
             "crop_yxyx": [],
             "updated_at": [],
-            "instance_mode": instance_mode,
         }
         embeddings = None
 
@@ -293,7 +292,5 @@ def calculate_embeddings_if_needed(
         for k, v in d.items():
             info_updated_dict[k].append(v)
     info_updated = info_updated_dict
-    info_updated["instance_mode"] = instance_mode
-
     sly.logger.info(f"Embeddings have been calculated, shape = {embeddings.shape}")
     return embeddings, info_updated, cfg, True
