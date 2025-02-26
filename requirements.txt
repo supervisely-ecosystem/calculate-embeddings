@@ -1,1 +1,2 @@
-supervisely==6.73.313+fix.bokeh.callback.route
+git+https://github.com/supervisely/supervisely.git@fix-bokeh-callback-route
+packaging==24.1
