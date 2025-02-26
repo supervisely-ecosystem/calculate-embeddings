@@ -1,4 +1,4 @@
-supervisely==6.73.267
+supervisely==6.73.314
 transformers==4.33.2
 timm==0.9.5
 torch
