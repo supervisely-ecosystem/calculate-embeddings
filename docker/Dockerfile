@@ -13,5 +13,6 @@ RUN python -c 'import transformers; transformers.AutoModel.from_pretrained("face
 
 RUN pip3 install supervisely==6.73.289
 RUN pip3 install fastapi==0.109.0 bokeh==3.1.1
-
+RUN python -m pip install --upgrade pip
+RUN python -m pip install --upgrade setuptools
 LABEL python_sdk_version=6.73.289
